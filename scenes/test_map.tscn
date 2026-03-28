@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://dn1uturfo2cyo"]
+
+[ext_resource type="PackedScene" uid="uid://cmspn2ci1aygs" path="res://scenes/player/mannequin.tscn" id="1_6ulkd"]
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_8pghk"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_h3xe5"]
+
+[node name="Node3D" type="Node3D" unique_id=366062421]
+
+[node name="Mannequin" parent="." unique_id=861557440 instance=ExtResource("1_6ulkd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=398152407]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=930255905]
+shape = SubResource("WorldBoundaryShape3D_8pghk")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D/CollisionShape3D" unique_id=947336191]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
+mesh = SubResource("PlaneMesh_h3xe5")
