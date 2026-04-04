@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://player001"]
+
+[ext_resource type="PackedScene" uid="uid://deerqrei7lpse" path="res://assets/models/anims/UAL1_Standard.glb" id="1_character"]
+[ext_resource type="Script" uid="uid://coiifuvnd8m6a" path="res://scripts/player/player.gd" id="2_script"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_col"]
+radius = 0.4
+height = 1.8
+
+[node name="Player" type="CharacterBody3D" unique_id=1976224753]
+script = ExtResource("2_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=35453354]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_col")
+
+[node name="Pivot" type="Node3D" parent="." unique_id=1147089211]
+
+[node name="Character" parent="Pivot" unique_id=393935812 instance=ExtResource("1_character")]
+rotation = Vector3(0, 3.14159, 0)
+
+[node name="CameraYaw" type="Node3D" parent="." unique_id=715033384]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+
+[node name="SpringArm3D" type="SpringArm3D" parent="CameraYaw" unique_id=1469892490]
+transform = Transform3D(1, 0, 0, 0, 0.93969256, 0.34202027, 0, -0.34202027, 0.93969256, 0, 0, 0)
+spring_length = 4.0
+
+[node name="Camera3D" type="Camera3D" parent="CameraYaw/SpringArm3D" unique_id=1087676456]
+current = true

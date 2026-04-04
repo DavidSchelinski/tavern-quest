@@ -1,0 +1,93 @@
+[gd_scene load_steps=8 format=3 uid="uid://qboard001"]
+
+[ext_resource type="Script" path="res://scripts/world/quest_board.gd" id="1_script"]
+
+[sub_resource type="BoxMesh" id="BM_Board"]
+size = Vector3(4.0, 2.0, 0.1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Board"]
+albedo_color = Color(0.07, 0.11, 0.05, 1)
+roughness = 0.95
+
+[sub_resource type="BoxShape3D" id="BS_Board"]
+size = Vector3(4.0, 2.0, 0.12)
+
+[sub_resource type="StyleBoxFlat" id="SB_Parchment"]
+bg_color = Color(0.88, 0.78, 0.56, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.45, 0.28, 0.08, 1)
+
+[sub_resource type="StyleBoxEmpty" id="SB_Empty"]
+
+[node name="QuestBoard" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="BoardMesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("BM_Board")
+surface_material_override/0 = SubResource("Mat_Board")
+
+; Thin static body so ray can hit the board
+[node name="BoardBody" type="StaticBody3D" parent="."]
+groups = ["interactable"]
+[node name="BoardShape" type="CollisionShape3D" parent="BoardBody"]
+shape = SubResource("BS_Board")
+
+; Floating prompt — shown by script when player looks at board
+[node name="Prompt" type="Label3D" parent="."]
+position = Vector3(0, 1.4, 0.25)
+text = "[ F ]  Read Quests"
+pixel_size = 0.007
+billboard = 1
+modulate = Color(1, 0.95, 0.55, 1)
+visible = false
+
+; Camera used during board-view — zooms in via FOV tween
+[node name="BoardCamera" type="Camera3D" parent="."]
+position = Vector3(0, 0, 2.8)
+current = false
+fov = 90.0
+
+; ── Parchment UI (shown over board camera view) ───────────────────────────────
+[node name="BoardUI" type="CanvasLayer" parent="."]
+visible = false
+
+[node name="BG" type="ColorRect" parent="BoardUI"]
+color = Color(0, 0, 0, 0.55)
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="Panel" parent="BoardUI"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340
+offset_top = -310
+offset_right = 340
+offset_bottom = 310
+theme_override_styles/panel = SubResource("SB_Parchment")
+
+[node name="Margin" type="MarginContainer" parent="BoardUI/Panel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="QuestText" type="RichTextLabel" parent="BoardUI/Panel/Margin"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+bbcode_enabled = true
+fit_content = false
+scroll_active = true
+theme_override_styles/normal = SubResource("SB_Empty")
+theme_override_font_sizes/normal_font_size = 16
+theme_override_font_sizes/bold_font_size = 17

@@ -1,0 +1,81 @@
+[gd_scene format=3 uid="uid://tavern001"]
+
+[ext_resource type="PackedScene" uid="uid://bx4xrdmc01ifm" path="res://assets/tavern_claude.fbx" id="1_fbx"]
+[ext_resource type="PackedScene" uid="uid://qboard001" path="res://scenes/world/quest_board.tscn" id="2_qboard"]
+[ext_resource type="PackedScene" uid="uid://bartender001" path="res://scenes/npc/bartender.tscn" id="3_bartender"]
+[ext_resource type="Script" uid="uid://bg3ta72xntx0v" path="res://scripts/world/tavern.gd" id="4_script"]
+[ext_resource type="Script" path="res://scripts/world/questboard_area.gd" id="5_qbscript"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4butg"]
+size = Vector3(3.9957275, 1.9801025, 0.21911621)
+
+[node name="Tavern" type="StaticBody3D" unique_id=81329389]
+script = ExtResource("4_script")
+
+[node name="TavernMesh" parent="." unique_id=1959283655 instance=ExtResource("1_fbx")]
+
+[node name="QuestBoard" parent="." unique_id=491243377 instance=ExtResource("2_qboard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -8.5)
+
+[node name="Bartender" parent="." unique_id=1413411384 instance=ExtResource("3_bartender")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 9.5, 0.9, 0)
+
+[node name="Lighting" type="Node3D" parent="." unique_id=969467013]
+
+[node name="LightMain" type="OmniLight3D" parent="Lighting" unique_id=1195786166]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 0)
+light_color = Color(1, 0.78, 0.42, 1)
+light_energy = 14.0
+shadow_enabled = true
+omni_range = 12.0
+
+[node name="LightBar" type="OmniLight3D" parent="Lighting" unique_id=1890406812]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 3.5, 0)
+light_color = Color(1, 0.72, 0.38, 1)
+light_energy = 9.0
+shadow_enabled = true
+omni_range = 9.0
+
+[node name="LightBoard" type="OmniLight3D" parent="Lighting" unique_id=2042546640]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, -7)
+light_color = Color(0.95, 0.95, 0.72, 1)
+light_energy = 7.0
+shadow_enabled = true
+omni_range = 7.0
+
+[node name="LightEntry" type="OmniLight3D" parent="Lighting" unique_id=289120552]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 7)
+light_color = Color(1, 0.8, 0.5, 1)
+light_energy = 6.0
+shadow_enabled = true
+omni_range = 7.0
+
+[node name="LightUpper" type="OmniLight3D" parent="Lighting" unique_id=421585332]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8, 0)
+light_color = Color(1, 0.82, 0.5, 1)
+light_energy = 10.0
+shadow_enabled = true
+omni_range = 11.0
+
+[node name="LightUpperL" type="OmniLight3D" parent="Lighting" unique_id=1378758175]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 7.5, -4)
+light_color = Color(1, 0.78, 0.42, 1)
+light_energy = 7.0
+shadow_enabled = true
+omni_range = 8.0
+
+[node name="LightUpperR" type="OmniLight3D" parent="Lighting" unique_id=351907602]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 7.5, 4)
+light_color = Color(1, 0.78, 0.42, 1)
+light_energy = 7.0
+shadow_enabled = true
+omni_range = 8.0
+
+[node name="Questboard" type="Node3D" parent="." unique_id=1356333014]
+script = ExtResource("5_qbscript")
+
+[node name="Area3D" type="Area3D" parent="Questboard" unique_id=1132820090]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Questboard/Area3D" unique_id=485040396]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00030517578, 2.5070062, -8.528732)
+shape = SubResource("BoxShape3D_4butg")

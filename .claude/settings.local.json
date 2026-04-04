@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__godot__get_godot_version",
+      "mcp__godot__list_projects",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('mcpServers', {}\\), indent=2\\)\\)\")",
+      "mcp__godot__add_node",
+      "mcp__blender__get_scene_info",
+      "mcp__blender__execute_blender_code",
+      "mcp__blender__get_viewport_screenshot",
+      "mcp__blender__get_object_info",
+      "Bash(ls -lah /c/Users/konst/guild-quest/*.glb)",
+      "mcp__godot__get_project_info",
+      "mcp__godot__run_project",
+      "mcp__godot__get_debug_output",
+      "mcp__godot__stop_project"
+    ]
+  }
+}
