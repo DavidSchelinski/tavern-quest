@@ -33,6 +33,7 @@ func _ready() -> void:
 
 func _setup_spawner() -> void:
 	_spawner = MultiplayerSpawner.new()
+	_spawner.name = "Spawner"
 	_spawner.add_spawnable_scene(PLAYER_SCENE)
 	add_child(_spawner)
 	# Path relative to spawner → up to GameManager → Players sibling

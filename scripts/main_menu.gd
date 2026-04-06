@@ -35,6 +35,8 @@ var _join_ip_field   : LineEdit
 var _join_port_field : LineEdit
 var _join_status     : Label
 var _join_btn        : Button
+var _join_server_list : ItemList
+var _discovered      : Dictionary = {}   # "ip:port" → info dict
 var _http            : HTTPRequest
 
 
@@ -49,6 +51,7 @@ func _ready() -> void:
 	# NetworkManager signals for join flow
 	NetworkManager.player_connected.connect(_on_net_player_connected)
 	NetworkManager.connection_failed.connect(_on_net_connection_failed)
+	NetworkManager.server_found.connect(_on_server_found)
 
 
 func _process(_delta: float) -> void:
@@ -135,6 +138,9 @@ func _build_ui() -> void:
 	)
 	join_btn_m.pressed.connect(func() -> void:
 		_join_root.visible = true
+		_discovered.clear()
+		_join_server_list.clear()
+		NetworkManager.start_discovery()
 	)
 	settings_btn.pressed.connect(func() -> void:
 		_settings_root.visible = true
@@ -553,12 +559,12 @@ func _build_join_overlay() -> void:
 	_join_root = _make_overlay_root()
 
 	var panel := Panel.new()
-	panel.custom_minimum_size = Vector2(460, 320)
+	panel.custom_minimum_size = Vector2(520, 480)
 	(_join_root.get_child(1) as CenterContainer).add_child(panel)
 
 	var margin := _panel_margin(panel)
 	var col    := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 16)
+	col.add_theme_constant_override("separation", 12)
 	margin.add_child(col)
 
 	var title := Label.new()
@@ -566,6 +572,24 @@ func _build_join_overlay() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 24)
 	col.add_child(title)
+
+	# ── Server list ───────────────────────────────────────────────────────────
+	var list_lbl := Label.new()
+	list_lbl.text = "Spiele im Netzwerk:"
+	list_lbl.modulate = Color(0.75, 0.75, 0.75)
+	col.add_child(list_lbl)
+
+	_join_server_list = ItemList.new()
+	_join_server_list.custom_minimum_size = Vector2(0, 120)
+	_join_server_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_join_server_list.item_selected.connect(_on_server_selected)
+	col.add_child(_join_server_list)
+
+	# ── Manual entry ──────────────────────────────────────────────────────────
+	var manual_lbl := Label.new()
+	manual_lbl.text = "Oder manuell verbinden:"
+	manual_lbl.modulate = Color(0.75, 0.75, 0.75)
+	col.add_child(manual_lbl)
 
 	# IP
 	var ip_row := HBoxContainer.new()
@@ -597,10 +621,6 @@ func _build_join_overlay() -> void:
 	_join_status.modulate = Color(1.0, 0.5, 0.5)
 	col.add_child(_join_status)
 
-	var gap := Control.new()
-	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	col.add_child(gap)
-
 	var btns := HBoxContainer.new()
 	btns.add_theme_constant_override("separation", 12)
 	col.add_child(btns)
@@ -610,6 +630,7 @@ func _build_join_overlay() -> void:
 	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cancel.pressed.connect(func() -> void:
 		NetworkManager.close()
+		NetworkManager.stop_discovery()
 		_join_root.visible = false
 		_join_status.text  = ""
 		_join_btn.disabled = false
@@ -633,12 +654,39 @@ func _on_join_connect() -> void:
 	_join_btn.disabled = true
 	_join_btn.text     = "Verbinde…"
 	_join_status.text  = ""
+	NetworkManager.stop_discovery()
 	NetworkManager.join(ip, port)
+
+
+func _on_server_found(_ip: String, info: Dictionary) -> void:
+	var key  := "%s:%d" % [info.get("ip", ""), int(info.get("port", 0))]
+	var text := "%s  (%s)  –  %d/%d Spieler" % [
+		info.get("name", "?"),
+		info.get("ip", "?"),
+		int(info.get("players", 0)),
+		int(info.get("max_players", 0)),
+	]
+	if _discovered.has(key):
+		# Update existing entry
+		var idx : int = _discovered[key]
+		if idx < _join_server_list.item_count:
+			_join_server_list.set_item_text(idx, text)
+	else:
+		var idx := _join_server_list.add_item(text)
+		_join_server_list.set_item_metadata(idx, info)
+		_discovered[key] = idx
+
+
+func _on_server_selected(idx: int) -> void:
+	var info : Dictionary = _join_server_list.get_item_metadata(idx)
+	_join_ip_field.text   = str(info.get("ip", ""))
+	_join_port_field.text = str(int(info.get("port", DEFAULT_PORT)))
 
 
 func _on_net_player_connected(_id: int) -> void:
 	# Called when our own connection to the server succeeds.
 	if _join_root and _join_root.visible:
+		NetworkManager.stop_discovery()
 		_join_root.visible = false
 		get_tree().change_scene_to_file(GAME_SCENE)
 

@@ -5,13 +5,22 @@ signal player_connected(id: int)
 signal player_disconnected(id: int)
 signal connection_failed()
 signal server_disconnected()
+signal server_found(ip: String, info: Dictionary)
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-const DEFAULT_PORT := 7777
-const MAX_PLAYERS  := 16
+const DEFAULT_PORT    := 7777
+const MAX_PLAYERS     := 16
+const DISCOVERY_PORT  := 7776
+const BEACON_INTERVAL := 2.0
 
 # ── State ─────────────────────────────────────────────────────────────────────
 var is_hosting : bool = false
+
+# ── Discovery ─────────────────────────────────────────────────────────────────
+var _broadcast_peer  : PacketPeerUDP = null
+var _broadcast_timer : Timer         = null
+var _broadcast_port  : int           = DEFAULT_PORT
+var _discovery_peer  : PacketPeerUDP = null
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -27,6 +36,7 @@ func host(port: int = DEFAULT_PORT) -> Error:
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	is_hosting = true
+	start_broadcast(port)
 	return OK
 
 
@@ -47,6 +57,7 @@ func join(ip: String, port: int = DEFAULT_PORT) -> Error:
 
 ## Cleanly close the connection.
 func close() -> void:
+	stop_broadcast()
 	if multiplayer.multiplayer_peer:
 		multiplayer.multiplayer_peer.close()
 		multiplayer.multiplayer_peer = null
@@ -68,6 +79,83 @@ func _is_private_172(addr: String) -> bool:
 		return false
 	var second := int(parts[1])
 	return second >= 16 and second <= 31
+
+
+# ── LAN broadcast (host side) ────────────────────────────────────────────────
+
+func start_broadcast(game_port: int = DEFAULT_PORT) -> void:
+	stop_broadcast()
+	_broadcast_port = game_port
+	_broadcast_peer = PacketPeerUDP.new()
+	_broadcast_peer.set_broadcast_enabled(true)
+	_broadcast_peer.set_dest_address("255.255.255.255", DISCOVERY_PORT)
+
+	_broadcast_timer = Timer.new()
+	_broadcast_timer.wait_time = BEACON_INTERVAL
+	_broadcast_timer.timeout.connect(_send_beacon)
+	add_child(_broadcast_timer)
+	_broadcast_timer.start()
+	_send_beacon()
+
+
+func stop_broadcast() -> void:
+	if _broadcast_timer:
+		_broadcast_timer.stop()
+		_broadcast_timer.queue_free()
+		_broadcast_timer = null
+	if _broadcast_peer:
+		_broadcast_peer.close()
+		_broadcast_peer = null
+
+
+func _send_beacon() -> void:
+	if _broadcast_peer == null:
+		return
+	var player_count := 0
+	if multiplayer.multiplayer_peer:
+		player_count = multiplayer.get_peers().size() + 1
+	var host_name := OS.get_environment("COMPUTERNAME")
+	if host_name.is_empty():
+		host_name = OS.get_environment("HOSTNAME")
+	if host_name.is_empty():
+		host_name = "Tavern Server"
+	var data := {
+		"name": host_name,
+		"port": _broadcast_port,
+		"players": player_count,
+		"max_players": MAX_PLAYERS,
+	}
+	_broadcast_peer.put_packet(JSON.stringify(data).to_utf8_buffer())
+
+
+# ── LAN discovery (client side) ──────────────────────────────────────────────
+
+func start_discovery() -> void:
+	stop_discovery()
+	_discovery_peer = PacketPeerUDP.new()
+	var err := _discovery_peer.bind(DISCOVERY_PORT)
+	if err != OK:
+		push_warning("NetworkManager: could not bind discovery port %d" % DISCOVERY_PORT)
+		_discovery_peer = null
+
+
+func stop_discovery() -> void:
+	if _discovery_peer:
+		_discovery_peer.close()
+		_discovery_peer = null
+
+
+func _process(_delta: float) -> void:
+	if _discovery_peer == null:
+		return
+	while _discovery_peer.get_available_packet_count() > 0:
+		var packet := _discovery_peer.get_packet()
+		var ip     := _discovery_peer.get_packet_ip()
+		var json   := JSON.new()
+		if json.parse(packet.get_string_from_utf8()) == OK and json.data is Dictionary:
+			var info : Dictionary = json.data
+			info["ip"] = ip
+			server_found.emit(ip, info)
 
 
 # ── Internal callbacks ────────────────────────────────────────────────────────

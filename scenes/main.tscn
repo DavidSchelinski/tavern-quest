@@ -2,14 +2,14 @@
 
 [ext_resource type="PackedScene" uid="uid://tavern001" path="res://scenes/world/tavern.tscn" id="1_tavern"]
 [ext_resource type="Script" uid="uid://51casnr35vyy" path="res://scripts/world/day_night_cycle.gd" id="3_dnc"]
-[ext_resource type="Script" path="res://scripts/world/game_manager.gd" id="4_gm"]
+[ext_resource type="Script" uid="uid://c3npjwmecc7jy" path="res://scripts/world/game_manager.gd" id="4_gm"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_001"]
-sky_top_color = Color(0.26, 0.43, 0.72, 1)
-sky_horizon_color = Color(0.8, 0.62, 0.42, 1)
+sky_top_color = Color(0.15843137, 0.31882352, 0.6211765, 1)
+sky_horizon_color = Color(0.86761904, 0.62666667, 0.40666667, 1)
 sky_curve = 0.09
-ground_bottom_color = Color(0.12, 0.1, 0.08, 1)
-ground_horizon_color = Color(0.42, 0.32, 0.22, 1)
+ground_bottom_color = Color(0.06666667, 0.053333335, 0.046666667, 1)
+ground_horizon_color = Color(0.24, 0.15333334, 0.093333334, 1)
 sun_curve = 0.12
 
 [sub_resource type="Sky" id="Sky_001"]
@@ -19,8 +19,8 @@ sky_material = SubResource("ProceduralSkyMaterial_001")
 background_mode = 2
 sky = SubResource("Sky_001")
 ambient_light_source = 3
-ambient_light_color = Color(1, 0.92, 0.8, 1)
-ambient_light_energy = 0.45
+ambient_light_color = Color(0.65555555, 0.59111106, 0.6088889, 1)
+ambient_light_energy = 0.33
 tonemap_mode = 2
 ssao_enabled = true
 ssao_intensity = 1.5
@@ -38,14 +38,14 @@ script = ExtResource("3_dnc")
 environment = SubResource("Environment_001")
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=941322592]
-transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 0, 0)
-light_color = Color(1, 0.96, 0.84, 1)
-light_energy = 1.8
+transform = Transform3D(0.866, -0.24996914, 0.43295923, 0, 0.8658994, 0.49992725, -0.5, -0.43294653, 0.7498854, 0, 0, 0)
+light_color = Color(1, 0.8227451, 0.6047059, 1)
+light_energy = 1.8078431
 shadow_enabled = true
 
 [node name="Tavern" parent="." unique_id=1614338593 instance=ExtResource("1_tavern")]
 
-[node name="GameManager" type="Node" parent="."]
+[node name="GameManager" type="Node" parent="." unique_id=889032657]
 script = ExtResource("4_gm")
 
-[node name="Players" type="Node3D" parent="GameManager"]
+[node name="Players" type="Node3D" parent="GameManager" unique_id=1249423437]

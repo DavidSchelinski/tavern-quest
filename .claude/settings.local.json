@@ -13,7 +13,11 @@
       "mcp__godot__get_project_info",
       "mcp__godot__run_project",
       "mcp__godot__get_debug_output",
-      "mcp__godot__stop_project"
+      "mcp__godot__stop_project",
+      "Bash(export:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir -p \"/c/Program Files/Godot\")",
+      "Bash(ln -s \"/c/Users/konst/Documents/Godot_v4.6.1-stable_win64.exe/Godot.exe\" \"/c/Program Files/Godot/Godot.exe\")"
     ]
   }
 }

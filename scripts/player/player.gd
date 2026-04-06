@@ -1,7 +1,7 @@
 extends CharacterBody3D
 
 # ── Interaction state ─────────────────────────────────────────────────────────
-enum State { NORMAL, BOARD_VIEW }
+enum State { NORMAL, BOARD_VIEW, MENU }
 
 # ── Animation state machine ───────────────────────────────────────────────────
 enum AnimState { IDLE, WALK, SPRINT, JUMP, FALL, LAND }
@@ -35,6 +35,7 @@ const ANIM_LAND   := "Jump_Land"    # plays on touch-down (one-shot)
 # ── State ─────────────────────────────────────────────────────────────────────
 var state                 : State     = State.NORMAL
 var _current_interactable : Node3D    = null
+var _game_menu            : CanvasLayer = null
 
 # ── Animation ─────────────────────────────────────────────────────────────────
 var _anim_player  : AnimationPlayer = null
@@ -52,8 +53,10 @@ func _ready() -> void:
 	# non-authoritative (remote) instances don't interfere with the local mouse.
 	if not multiplayer.has_multiplayer_peer():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		camera.current = true
 	_setup_animations.call_deferred()
 	_setup_multiplayer.call_deferred()
+	_setup_game_menu.call_deferred()
 
 
 # ── Multiplayer authority ─────────────────────────────────────────────────────
@@ -70,21 +73,35 @@ func _setup_multiplayer() -> void:
 
 	if _is_mine():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		camera.current = true
 	else:
-		# Remote player: disable this instance's camera.
 		camera.current = false
 
-	# Build a MultiplayerSynchronizer that replicates position, visual rotation,
-	# and animation state to all peers.
-	var sync   := MultiplayerSynchronizer.new()
-	var config := SceneReplicationConfig.new()
-	for path_str in [".:position", ".:rotation", "Pivot:rotation", ".:net_anim"]:
-		var p := NodePath(path_str)
-		config.add_property(p)
-		config.property_set_spawn(p, true)
-		config.property_set_replication_mode(p, SceneReplicationConfig.REPLICATION_MODE_ALWAYS)
-	sync.replication_config = config
-	add_child(sync)
+
+# ── Game menu ─────────────────────────────────────────────────────────────────
+
+func _setup_game_menu() -> void:
+	if not _is_mine():
+		return
+	var menu_script := load("res://scripts/ui/game_menu.gd")
+	_game_menu = CanvasLayer.new()
+	_game_menu.set_script(menu_script)
+	add_child(_game_menu)
+	_game_menu.resumed.connect(_on_menu_resumed)
+
+
+func _open_game_menu() -> void:
+	if _game_menu == null:
+		return
+	state = State.MENU
+	velocity.x = 0.0
+	velocity.z = 0.0
+	_enter_anim_state(AnimState.IDLE)
+	_game_menu.open()
+
+
+func _on_menu_resumed() -> void:
+	state = State.NORMAL
 
 
 # ── Animation setup ───────────────────────────────────────────────────────────
@@ -189,7 +206,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			deg_to_rad(PITCH_MAX)
 		)
 	if event.is_action_pressed("ui_cancel"):
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		_open_game_menu()
+		return
 	if event.is_action_pressed("interact") and _current_interactable:
 		_current_interactable.interact(self)
 
@@ -204,7 +222,15 @@ func _physics_process(delta: float) -> void:
 			_enter_anim_state(synced_state)
 		return
 
-	if state != State.NORMAL:
+	if state == State.BOARD_VIEW:
+		return
+
+	if state == State.MENU:
+		if not is_on_floor():
+			velocity.y -= GRAVITY * delta
+		velocity.x = 0.0
+		velocity.z = 0.0
+		move_and_slide()
 		return
 
 	var on_floor := is_on_floor()

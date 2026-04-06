@@ -42,8 +42,6 @@ CHARAKTER-BEWERTUNG (Onboarding)
     - Beweglichkeit → Ausweichen, Angriffsgeschwindigkeit, Klettern
     - Verteidigung  → Schadensreduktion, Blocken
     - Ausdauer      → Stamina-Pool, Resistenz gegen Erschöpfung
-    - Wahrnehmung   → Entdecken von Feinden/Schätzen, Fernkampfgenauigkeit
-    - Willenskraft  → Magiestärke, Statusresistenz, Führungsbonus
     - Charisma      → NPC-Rekrutierung, bessere Questbelohnungen, Handel
 
   Sekundäre Werte (abgeleitet):
