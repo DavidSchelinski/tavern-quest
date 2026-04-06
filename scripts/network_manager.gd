@@ -55,13 +55,24 @@ func join(ip: String, port: int = DEFAULT_PORT) -> Error:
 	return OK
 
 
-## Cleanly close the connection.
+## Cleanly close the connection and reset all state so a new session can start.
 func close() -> void:
 	stop_broadcast()
+	# Disconnect all multiplayer signals to prevent double-connections on re-host/rejoin
+	_safe_disconnect(multiplayer.peer_connected, _on_peer_connected)
+	_safe_disconnect(multiplayer.peer_disconnected, _on_peer_disconnected)
+	_safe_disconnect(multiplayer.connected_to_server, _on_connected_to_server)
+	_safe_disconnect(multiplayer.connection_failed, _on_connection_failed)
+	_safe_disconnect(multiplayer.server_disconnected, _on_server_disconnected)
 	if multiplayer.multiplayer_peer:
 		multiplayer.multiplayer_peer.close()
 		multiplayer.multiplayer_peer = null
 	is_hosting = false
+
+
+func _safe_disconnect(sig: Signal, callable: Callable) -> void:
+	if sig.is_connected(callable):
+		sig.disconnect(callable)
 
 
 ## Returns the best local LAN IP address, or 127.0.0.1 as fallback.

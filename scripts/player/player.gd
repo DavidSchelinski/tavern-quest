@@ -1,7 +1,7 @@
 extends CharacterBody3D
 
 # ── Interaction state ─────────────────────────────────────────────────────────
-enum State { NORMAL, BOARD_VIEW, MENU }
+enum State { NORMAL, BOARD_VIEW, MENU, DIALOG }
 
 # ── Animation state machine ───────────────────────────────────────────────────
 enum AnimState { IDLE, WALK, SPRINT, JUMP, FALL, LAND }
@@ -36,6 +36,7 @@ const ANIM_LAND   := "Jump_Land"    # plays on touch-down (one-shot)
 var state                 : State     = State.NORMAL
 var _current_interactable : Node3D    = null
 var _game_menu            : CanvasLayer = null
+var _dialog_ui            : CanvasLayer = null
 
 # ── Animation ─────────────────────────────────────────────────────────────────
 var _anim_player  : AnimationPlayer = null
@@ -49,6 +50,7 @@ var net_anim : int = 0
 
 
 func _ready() -> void:
+	add_to_group("player")
 	# In multiplayer, mouse capture is deferred to _setup_multiplayer so
 	# non-authoritative (remote) instances don't interfere with the local mouse.
 	if not multiplayer.has_multiplayer_peer():
@@ -57,6 +59,7 @@ func _ready() -> void:
 	_setup_animations.call_deferred()
 	_setup_multiplayer.call_deferred()
 	_setup_game_menu.call_deferred()
+	_setup_dialog_ui.call_deferred()
 
 
 # ── Multiplayer authority ─────────────────────────────────────────────────────
@@ -102,6 +105,29 @@ func _open_game_menu() -> void:
 
 func _on_menu_resumed() -> void:
 	state = State.NORMAL
+
+
+# ── Dialog ────────────────────────────────────────────────────────────────────
+
+func _setup_dialog_ui() -> void:
+	if not _is_mine():
+		return
+	var ui_script := load("res://scripts/dialog/dialog_ui.gd")
+	_dialog_ui = CanvasLayer.new()
+	_dialog_ui.set_script(ui_script)
+	add_child(_dialog_ui)
+
+
+func enter_dialog() -> void:
+	state = State.DIALOG
+	velocity = Vector3.ZERO
+	_enter_anim_state(AnimState.IDLE)
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
+func exit_dialog() -> void:
+	state = State.NORMAL
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 
 # ── Animation setup ───────────────────────────────────────────────────────────
@@ -225,7 +251,7 @@ func _physics_process(delta: float) -> void:
 	if state == State.BOARD_VIEW:
 		return
 
-	if state == State.MENU:
+	if state == State.MENU or state == State.DIALOG:
 		if not is_on_floor():
 			velocity.y -= GRAVITY * delta
 		velocity.x = 0.0

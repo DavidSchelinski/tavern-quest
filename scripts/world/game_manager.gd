@@ -3,6 +3,8 @@ extends Node
 # ── Config ────────────────────────────────────────────────────────────────────
 const PLAYER_SCENE   := "res://scenes/player/player.tscn"
 const SPAWN_POSITION := Vector3(0.0, 1.0, 22.0)
+const SAFE_CHECK_RADIUS := 0.45
+const SAFE_CHECK_HEIGHT := 1.7
 
 # ── Refs ──────────────────────────────────────────────────────────────────────
 @onready var _players : Node3D = $Players
@@ -20,6 +22,7 @@ func _ready() -> void:
 
 	# ── Multiplayer ────────────────────────────────────────────────────────────
 	NetworkManager.player_disconnected.connect(_on_player_disconnected)
+	NetworkManager.server_disconnected.connect(_on_server_disconnected)
 
 	if multiplayer.is_server():
 		# Host spawns themselves immediately.
@@ -46,13 +49,50 @@ func _setup_spawner() -> void:
 func _spawn_player(id: int) -> void:
 	if _players.has_node(str(id)):
 		return
-	var player: Node = load(PLAYER_SCENE).instantiate()
+	var player: CharacterBody3D = load(PLAYER_SCENE).instantiate()
 	player.name = str(id)
 	player.position = SPAWN_POSITION
 	# Authority must be set before add_child so _ready() sees the correct value
 	# (deferred in player.gd to stay safe).
 	player.set_multiplayer_authority(id)
 	_players.add_child(player, true)
+	_ensure_safe_position.call_deferred(player)
+
+
+func _ensure_safe_position(player: CharacterBody3D) -> void:
+	var space := player.get_world_3d().direct_space_state
+	if space == null:
+		return
+
+	var shape := CapsuleShape3D.new()
+	shape.radius = SAFE_CHECK_RADIUS
+	shape.height = SAFE_CHECK_HEIGHT
+
+	var params := PhysicsShapeQueryParameters3D.new()
+	params.shape = shape
+	params.exclude = [player.get_rid()]
+	# Check against world (1) + players (2)
+	params.collision_mask = 3
+
+	var origin := player.position
+	# Shape center needs to be at capsule midpoint
+	params.transform = Transform3D(Basis.IDENTITY, origin + Vector3(0, SAFE_CHECK_HEIGHT * 0.5, 0))
+
+	if space.intersect_shape(params, 1).is_empty():
+		return
+
+	# Spiral outward to find a clear spot
+	for radius in [1.5, 3.0, 4.5, 6.0, 9.0]:
+		for step in range(8):
+			var angle := step * TAU / 8.0
+			var test_pos := origin + Vector3(cos(angle) * radius, 0, sin(angle) * radius)
+			params.transform = Transform3D(Basis.IDENTITY, test_pos + Vector3(0, SAFE_CHECK_HEIGHT * 0.5, 0))
+			if space.intersect_shape(params, 1).is_empty():
+				player.position = test_pos
+				return
+
+	# Last resort: nudge sideways
+	player.position = origin + Vector3(2, 0, 0)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -75,3 +115,8 @@ func _on_player_disconnected(id: int) -> void:
 	var player := _players.get_node_or_null(str(id))
 	if player:
 		player.queue_free()
+
+
+func _on_server_disconnected() -> void:
+	NetworkManager.close()
+	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")

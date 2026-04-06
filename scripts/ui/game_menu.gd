@@ -5,25 +5,30 @@ signal quit_to_menu
 
 const SETTINGS_PATH := "user://settings.cfg"
 const ACTIONS : Dictionary = {
-	"move_forward" : "Vorwärts",
-	"move_back"    : "Rückwärts",
-	"move_left"    : "Links",
-	"move_right"   : "Rechts",
-	"jump"         : "Springen",
-	"sprint"       : "Rennen",
-	"interact"     : "Interagieren",
+	"move_forward" : "ACTION_FORWARD",
+	"move_back"    : "ACTION_BACK",
+	"move_left"    : "ACTION_LEFT",
+	"move_right"   : "ACTION_RIGHT",
+	"jump"         : "ACTION_JUMP",
+	"sprint"       : "ACTION_SPRINT",
+	"interact"     : "ACTION_INTERACT",
 }
 
-var _cfg          := ConfigFile.new()
-var _rebind_action : String = ""
-var _rebind_btn    : Button = null
-var _control_btns  : Dictionary = {}
+var _cfg            := ConfigFile.new()
+var _rebind_action  : String = ""
+var _rebind_btn     : Button = null
+var _control_btns   : Dictionary = {}
+var _master_slider  : HSlider
+var _fps_check      : CheckButton
+var _fullscreen_check : CheckButton
+var _fps_label      : Label
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_cfg.load(SETTINGS_PATH)
 	_build_ui()
+	_apply_display_settings()
 	visible = false
 
 
@@ -32,9 +37,15 @@ func open() -> void:
 	if not multiplayer.has_multiplayer_peer():
 		get_tree().paused = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	# Refresh displayed key labels
+	# Refresh key labels
 	for action in _control_btns:
 		_control_btns[action].text = _action_key_string(action)
+	# Sync slider/checks
+	_master_slider.value = _cfg.get_value("audio", "master_pct", 100.0)
+	_fps_check.set_pressed_no_signal(_cfg.get_value("display", "show_fps", false))
+	_fullscreen_check.set_pressed_no_signal(
+		DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
+	)
 
 
 func close() -> void:
@@ -57,11 +68,30 @@ func _input(event: InputEvent) -> void:
 		close()
 
 
+func _process(_delta: float) -> void:
+	if _fps_label and _fps_label.visible:
+		_fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 #  BUILD UI
 # ──────────────────────────────────────────────────────────────────────────────
 
 func _build_ui() -> void:
+	# FPS label — always on screen (above menu overlay)
+	_fps_label = Label.new()
+	_fps_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_fps_label.offset_left = -110
+	_fps_label.offset_top  = 8
+	_fps_label.visible     = false
+	# Wrap in a Control so it stays outside the menu panel
+	var fps_root := Control.new()
+	fps_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fps_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fps_root.add_child(_fps_label)
+	add_child(fps_root)
+	fps_root.show()
+
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
@@ -93,7 +123,7 @@ func _build_ui() -> void:
 	margin.add_child(col)
 
 	var title := Label.new()
-	title.text = "Spielmenü"
+	title.text = tr("GAME_MENU_TITLE")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 26)
 	col.add_child(title)
@@ -102,6 +132,8 @@ func _build_ui() -> void:
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	col.add_child(tabs)
 
+	_build_audio_tab(tabs)
+	_build_display_tab(tabs)
 	_build_controls_tab(tabs)
 
 	# Bottom buttons
@@ -110,14 +142,14 @@ func _build_ui() -> void:
 	col.add_child(btn_row)
 
 	var resume_btn := Button.new()
-	resume_btn.text = "Fortsetzen"
+	resume_btn.text = tr("BTN_RESUME")
 	resume_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	resume_btn.custom_minimum_size = Vector2(0, 44)
 	resume_btn.pressed.connect(close)
 	btn_row.add_child(resume_btn)
 
 	var menu_btn := Button.new()
-	menu_btn.text = "Hauptmenü"
+	menu_btn.text = tr("BTN_MAIN_MENU")
 	menu_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	menu_btn.custom_minimum_size = Vector2(0, 44)
 	menu_btn.pressed.connect(_on_quit_to_menu)
@@ -132,12 +164,134 @@ func _on_quit_to_menu() -> void:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+#  AUDIO TAB
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _build_audio_tab(tabs: TabContainer) -> void:
+	var v := VBoxContainer.new()
+	v.name = tr("TAB_AUDIO")
+	tabs.add_child(v)
+
+	var pad := MarginContainer.new()
+	pad.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	pad.add_theme_constant_override("margin_top",   20)
+	pad.add_theme_constant_override("margin_left",  12)
+	pad.add_theme_constant_override("margin_right", 12)
+	v.add_child(pad)
+
+	var inner := VBoxContainer.new()
+	inner.add_theme_constant_override("separation", 18)
+	pad.add_child(inner)
+
+	_master_slider = _add_slider_row(inner, tr("AUDIO_MASTER"), _cfg.get_value("audio", "master_pct", 100.0))
+	_master_slider.value_changed.connect(func(val: float) -> void:
+		_set_master_volume(val)
+		_cfg.set_value("audio", "master_pct", val)
+		_save_settings()
+	)
+
+
+func _add_slider_row(parent: VBoxContainer, label: String, default_val: float) -> HSlider:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	parent.add_child(row)
+
+	var lbl := Label.new()
+	lbl.text = label
+	lbl.custom_minimum_size = Vector2(200, 0)
+	row.add_child(lbl)
+
+	var slider := HSlider.new()
+	slider.min_value = 0
+	slider.max_value = 100
+	slider.step      = 1
+	slider.value     = default_val
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(slider)
+
+	var val_lbl := Label.new()
+	val_lbl.text = "%d" % int(default_val)
+	val_lbl.custom_minimum_size = Vector2(36, 0)
+	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(val_lbl)
+
+	slider.value_changed.connect(func(v: float) -> void:
+		val_lbl.text = "%d" % int(v)
+	)
+	return slider
+
+
+func _set_master_volume(pct: float) -> void:
+	var db := linear_to_db(pct / 100.0) if pct > 0.0 else -80.0
+	AudioServer.set_bus_volume_db(0, db)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  DISPLAY TAB
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _build_display_tab(tabs: TabContainer) -> void:
+	var v := VBoxContainer.new()
+	v.name = tr("TAB_DISPLAY")
+	tabs.add_child(v)
+
+	var pad := MarginContainer.new()
+	pad.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	pad.add_theme_constant_override("margin_top",   20)
+	pad.add_theme_constant_override("margin_left",  12)
+	pad.add_theme_constant_override("margin_right", 12)
+	v.add_child(pad)
+
+	var inner := VBoxContainer.new()
+	inner.add_theme_constant_override("separation", 16)
+	pad.add_child(inner)
+
+	_fps_check        = _add_check_row(inner, tr("DISPLAY_FPS"))
+	_fullscreen_check = _add_check_row(inner, tr("DISPLAY_FULLSCREEN"))
+
+	_fps_check.toggled.connect(func(on: bool) -> void:
+		_fps_label.visible = on
+		_cfg.set_value("display", "show_fps", on)
+		_save_settings()
+	)
+	_fullscreen_check.toggled.connect(func(on: bool) -> void:
+		var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if on \
+				else DisplayServer.WINDOW_MODE_WINDOWED
+		DisplayServer.window_set_mode(mode)
+		_cfg.set_value("display", "fullscreen", on)
+		_save_settings()
+	)
+
+
+func _add_check_row(parent: VBoxContainer, label: String) -> CheckButton:
+	var row := HBoxContainer.new()
+	parent.add_child(row)
+
+	var lbl := Label.new()
+	lbl.text = label
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(lbl)
+
+	var check := CheckButton.new()
+	row.add_child(check)
+	return check
+
+
+func _apply_display_settings() -> void:
+	var show_fps : bool = _cfg.get_value("display", "show_fps", false)
+	_fps_label.visible = show_fps
+	var fullscreen : bool = _cfg.get_value("display", "fullscreen", false)
+	if fullscreen:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 #  CONTROLS TAB
 # ──────────────────────────────────────────────────────────────────────────────
 
 func _build_controls_tab(tabs: TabContainer) -> void:
 	var scroll := ScrollContainer.new()
-	scroll.name = "Steuerung"
+	scroll.name = tr("TAB_CONTROLS")
 	tabs.add_child(scroll)
 
 	var v := VBoxContainer.new()
@@ -161,7 +315,7 @@ func _build_controls_tab(tabs: TabContainer) -> void:
 		inner.add_child(row)
 
 		var lbl := Label.new()
-		lbl.text = ACTIONS[action]
+		lbl.text = tr(ACTIONS[action])
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(lbl)
 
@@ -183,7 +337,7 @@ func _start_rebind(action: String, btn: Button) -> void:
 		return
 	_rebind_action = action
 	_rebind_btn    = btn
-	btn.text       = "Taste drücken …"
+	btn.text       = tr("REBIND_PRESS")
 
 
 func _finish_rebind(event: InputEventKey) -> void:
@@ -198,7 +352,7 @@ func _finish_rebind(event: InputEventKey) -> void:
 
 	_apply_keybind(action, event.physical_keycode)
 	_cfg.set_value("controls", action, event.physical_keycode)
-	_cfg.save(SETTINGS_PATH)
+	_save_settings()
 	btn.text = _action_key_string(action)
 
 
@@ -216,3 +370,7 @@ func _action_key_string(action: String) -> String:
 		if ev is InputEventKey:
 			return OS.get_keycode_string(ev.physical_keycode)
 	return "—"
+
+
+func _save_settings() -> void:
+	_cfg.save(SETTINGS_PATH)

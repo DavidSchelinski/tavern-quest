@@ -1,0 +1,87 @@
+keys,de,en
+MENU_TITLE,TAVERN QUEST,TAVERN QUEST
+MENU_SUBTITLE,Ein Abenteuer erwartet euch,An adventure awaits
+MENU_SOLO,Solo spielen,Play Solo
+MENU_HOST,Welt hosten,Host World
+MENU_JOIN,Welt beitreten,Join World
+MENU_SETTINGS,Einstellungen,Settings
+MENU_QUIT,Beenden,Quit
+SETTINGS_TITLE,Einstellungen,Settings
+TAB_AUDIO,Audio,Audio
+TAB_DISPLAY,Anzeige,Display
+TAB_CONTROLS,Steuerung,Controls
+TAB_LANGUAGE,Sprache,Language
+AUDIO_MASTER,Lautstärke (Master),Volume (Master)
+DISPLAY_FPS,FPS anzeigen,Show FPS
+DISPLAY_FULLSCREEN,Vollbild,Fullscreen
+BTN_CLOSE,Schließen,Close
+BTN_CANCEL,Abbrechen,Cancel
+BTN_CONNECT,Verbinden,Connect
+BTN_CONNECTING,Verbinde…,Connecting…
+BTN_RESUME,Fortsetzen,Resume
+BTN_MAIN_MENU,Hauptmenü,Main Menu
+BTN_HOST_START,Server starten,Start Server
+HOST_TITLE,Welt hosten,Host World
+HOST_LOCAL_IP,Lokale IP:,Local IP:
+HOST_PUBLIC_IP,Öffentliche IP:,Public IP:
+HOST_PORT,Port:,Port:
+HOST_PORT_INFO,Für Internet-Spiel: Port im Router weiterleiten (UDP).,For online play: forward this port in your router (UDP).
+HOST_FETCHING_IP,Wird ermittelt…,Fetching…
+HOST_PORT_ERROR,Fehler: Port belegt?,Error: Port in use?
+JOIN_TITLE,Welt beitreten,Join World
+JOIN_LAN_SERVERS,Spiele im Netzwerk:,Games on Network:
+JOIN_MANUAL,Oder manuell verbinden:,Or connect manually:
+JOIN_IP,IP-Adresse:,IP Address:
+JOIN_IP_HINT,z.B. 192.168.1.42,e.g. 192.168.1.42
+JOIN_PORT,Port:,Port:
+JOIN_ENTER_IP,Bitte IP-Adresse eingeben.,Please enter an IP address.
+JOIN_FAILED,Verbindung fehlgeschlagen.,Connection failed.
+JOIN_PLAYERS,Spieler,Players
+REBIND_PRESS,Taste drücken …,Press a key …
+GAME_MENU_TITLE,Spielmenü,Game Menu
+ACTION_FORWARD,Vorwärts,Forward
+ACTION_BACK,Rückwärts,Backward
+ACTION_LEFT,Links,Left
+ACTION_RIGHT,Rechts,Right
+ACTION_JUMP,Springen,Jump
+ACTION_SPRINT,Rennen,Sprint
+ACTION_INTERACT,Interagieren,Interact
+QUEST_BOARD_TITLE,── QUEST BOARD ──,── QUEST BOARD ──
+QUEST_POSTED_BY,Aufgegeben von:,Posted by:
+QUEST_REWARD,★ Belohnung:,★ Reward:
+QUEST_CLOSE_HINT,[ F ] oder [ Esc ] zum Schließen,[ F ] or [ Esc ] to close
+QUEST_MISSING_SWORD,Das verlorene Schwert,The Missing Sword
+QUEST_MISSING_SWORD_GIVER,Aldric der Schmied,Aldric the Blacksmith
+QUEST_MISSING_SWORD_DESC,Meine beste Klinge wurde vor drei Nächten gestohlen. Finde den Dieb und bringe sie zurück.,My finest blade was stolen three nights past. Find the thief and return it.
+QUEST_MISSING_SWORD_REWARD,50 Gold,50 gold
+QUEST_CELLAR_RATS,Rattenplage im Keller,Cellar Rat Infestation
+QUEST_CELLAR_RATS_GIVER,Mara die Wirtin,Mara the Innkeeper
+QUEST_CELLAR_RATS_DESC,Ratten haben den Keller überrannt. Beseitige sie bevor sie unsere Wintervorräte auffressen.,Rats have overrun the cellar. Clear them before they eat our winter stores.
+QUEST_CELLAR_RATS_REWARD,20 Gold + freie Unterkunft,20 gold + free lodging
+QUEST_LOST_MERCHANT,Der verschollene Händler,The Lost Merchant
+QUEST_LOST_MERCHANT_GIVER,Hauptmann der Stadtwache,Town Guard Captain
+QUEST_LOST_MERCHANT_DESC,Händler Darius ist vor drei Tagen auf der nördlichen Waldstraße verschwunden. Finde ihn.,Merchant Darius vanished on the northern forest road three days ago. Find him.
+QUEST_LOST_MERCHANT_REWARD,100 Gold,100 gold
+QUEST_ANCIENT_RUINS,Antike Ruinen,Ancient Ruins
+QUEST_ANCIENT_RUINS_GIVER,Gelehrte Elara,Scholar Elara
+QUEST_ANCIENT_RUINS_DESC,Seltsame Lichter flackern jede Nacht in den alten Ruinen östlich der Stadt. Untersuche es.,Strange lights flicker in the old ruins east of town each night. Investigate.
+QUEST_ANCIENT_RUINS_REWARD,150 Gold + seltene Schriftrolle,150 gold + rare scroll
+HINT_QUEST_BOARD,[ F ]  Quest Board ansehen,[ F ]  View Quest Board
+BARTENDER_GREETING,Willkommen in der Taverne!,Welcome to the tavern!
+SERVER_DISCONNECTED,Verbindung zum Server verloren.,Connection to server lost.
+LANG_DE,Deutsch,German
+LANG_EN,Englisch,English
+NPC_BARTENDER,Wirt,Bartender
+DIALOG_GOODBYE,Auf Wiedersehen.,Goodbye.
+BARTENDER_DIALOG_GREETING,"Willkommen in meiner Taverne, Reisender! Was darf es sein?","Welcome to my tavern, traveler! What can I do for you?"
+BARTENDER_CHOICE_DRINK,Ich hätte gern etwas zu trinken.,I'd like a drink.
+BARTENDER_CHOICE_RUMORS,Gibt es Gerüchte?,Any rumors?
+BARTENDER_CHOICE_QUESTS,Gibt es Arbeit für einen Abenteurer?,Any work for an adventurer?
+BARTENDER_CHOICE_THANKS,Danke!,Thanks!
+BARTENDER_CHOICE_SOMETHING_ELSE,Ich wollte noch etwas anderes fragen…,I wanted to ask something else…
+BARTENDER_CHOICE_TELL_MORE,Erzähl mir mehr.,Tell me more.
+BARTENDER_DIALOG_DRINK,"Natürlich! Unser Honigmet ist der beste im ganzen Königreich. Hier, probier mal!","Of course! Our honey mead is the best in the whole kingdom. Here, try some!"
+BARTENDER_DIALOG_DRINK_THANKS,"Gern geschehen! Komm jederzeit wieder, wenn du Durst hast.","You're welcome! Come back anytime you're thirsty."
+BARTENDER_DIALOG_RUMORS,"Hmm… man munkelt, dass seltsame Lichter in den Ruinen östlich der Stadt gesichtet wurden. Klingt gefährlich.","Hmm… word is strange lights have been spotted in the ruins east of town. Sounds dangerous."
+BARTENDER_DIALOG_RUMORS_DETAIL,"Ein Händler namens Darius ist vor ein paar Tagen auf der Nordstraße verschwunden. Die Stadtwache sucht noch nach ihm. Vielleicht lohnt es sich, am Questboard vorbeizuschauen.","A merchant named Darius disappeared on the north road a few days ago. The town guard is still searching. Might be worth checking the quest board."
+BARTENDER_DIALOG_QUESTS,"Am Quest Board dort drüben hängen immer Aufträge aus. Schau mal vorbei – da ist bestimmt etwas für dich dabei.","The Quest Board over there always has jobs posted. Take a look – there's bound to be something for you."

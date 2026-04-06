@@ -1,0 +1,54 @@
+{
+	"nodes": {
+		"start": {
+			"speaker": "NPC_BARTENDER",
+			"text": "BARTENDER_DIALOG_GREETING",
+			"voice": "BARTENDER_GREETING",
+			"choices": [
+				{ "text": "BARTENDER_CHOICE_DRINK", "next": "drink" },
+				{ "text": "BARTENDER_CHOICE_RUMORS", "next": "rumors" },
+				{ "text": "BARTENDER_CHOICE_QUESTS", "next": "quests" },
+				{ "text": "DIALOG_GOODBYE", "next": "" }
+			]
+		},
+		"drink": {
+			"speaker": "NPC_BARTENDER",
+			"text": "BARTENDER_DIALOG_DRINK",
+			"voice": "BARTENDER_DRINK",
+			"choices": [
+				{ "text": "BARTENDER_CHOICE_THANKS", "next": "drink_thanks" },
+				{ "text": "BARTENDER_CHOICE_SOMETHING_ELSE", "next": "start" }
+			]
+		},
+		"drink_thanks": {
+			"speaker": "NPC_BARTENDER",
+			"text": "BARTENDER_DIALOG_DRINK_THANKS",
+			"voice": "BARTENDER_DRINK_THANKS",
+			"next": ""
+		},
+		"rumors": {
+			"speaker": "NPC_BARTENDER",
+			"text": "BARTENDER_DIALOG_RUMORS",
+			"voice": "BARTENDER_RUMORS",
+			"choices": [
+				{ "text": "BARTENDER_CHOICE_TELL_MORE", "next": "rumors_detail" },
+				{ "text": "BARTENDER_CHOICE_SOMETHING_ELSE", "next": "start" }
+			]
+		},
+		"rumors_detail": {
+			"speaker": "NPC_BARTENDER",
+			"text": "BARTENDER_DIALOG_RUMORS_DETAIL",
+			"voice": "BARTENDER_RUMORS_DETAIL",
+			"next": "start"
+		},
+		"quests": {
+			"speaker": "NPC_BARTENDER",
+			"text": "BARTENDER_DIALOG_QUESTS",
+			"voice": "BARTENDER_QUESTS",
+			"choices": [
+				{ "text": "BARTENDER_CHOICE_THANKS", "next": "" },
+				{ "text": "BARTENDER_CHOICE_SOMETHING_ELSE", "next": "start" }
+			]
+		}
+	}
+}

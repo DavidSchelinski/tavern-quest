@@ -4,31 +4,31 @@ extends Node3D
 const QUESTS: Array[Dictionary] = [
 	{
 		"rank": "E",
-		"title": "The Missing Sword",
-		"giver": "Aldric the Blacksmith",
-		"desc":  "My finest blade was stolen three nights past. Find the thief and return it.",
-		"reward": "50 gold",
+		"title_key": "QUEST_MISSING_SWORD",
+		"giver_key": "QUEST_MISSING_SWORD_GIVER",
+		"desc_key":  "QUEST_MISSING_SWORD_DESC",
+		"reward_key": "QUEST_MISSING_SWORD_REWARD",
 	},
 	{
 		"rank": "E",
-		"title": "Cellar Rat Infestation",
-		"giver": "Mara the Innkeeper",
-		"desc":  "Rats have overrun the cellar. Clear them before they eat our winter stores.",
-		"reward": "20 gold + free lodging",
+		"title_key": "QUEST_CELLAR_RATS",
+		"giver_key": "QUEST_CELLAR_RATS_GIVER",
+		"desc_key":  "QUEST_CELLAR_RATS_DESC",
+		"reward_key": "QUEST_CELLAR_RATS_REWARD",
 	},
 	{
 		"rank": "D",
-		"title": "The Lost Merchant",
-		"giver": "Town Guard Captain",
-		"desc":  "Merchant Darius vanished on the northern forest road three days ago. Find him.",
-		"reward": "100 gold",
+		"title_key": "QUEST_LOST_MERCHANT",
+		"giver_key": "QUEST_LOST_MERCHANT_GIVER",
+		"desc_key":  "QUEST_LOST_MERCHANT_DESC",
+		"reward_key": "QUEST_LOST_MERCHANT_REWARD",
 	},
 	{
 		"rank": "C",
-		"title": "Ancient Ruins",
-		"giver": "Scholar Elara",
-		"desc":  "Strange lights flicker in the old ruins east of town each night. Investigate.",
-		"reward": "150 gold + rare scroll",
+		"title_key": "QUEST_ANCIENT_RUINS",
+		"giver_key": "QUEST_ANCIENT_RUINS_GIVER",
+		"desc_key":  "QUEST_ANCIENT_RUINS_DESC",
+		"reward_key": "QUEST_ANCIENT_RUINS_REWARD",
 	},
 ]
 
@@ -78,11 +78,11 @@ func on_interact_exit() -> void:
 
 func _build_quest_bbcode() -> String:
 	var lines: PackedStringArray = []
-	lines.append("[center][font_size=22][b]── QUEST BOARD ──[/b][/font_size][/center]\n")
+	lines.append("[center][font_size=22][b]%s[/b][/font_size][/center]\n" % tr("QUEST_BOARD_TITLE"))
 	for q: Dictionary in QUESTS:
-		lines.append("[color=#c8a84b][b][Rank %s]  %s[/b][/color]" % [q["rank"], q["title"]])
-		lines.append("[color=#6b4f2a]  Posted by: %s[/color]" % q["giver"])
-		lines.append("  %s" % q["desc"])
-		lines.append("[color=#5a8a3c]  ★ Reward: %s[/color]\n" % q["reward"])
-	lines.append("\n[center][color=#888][i][ F ] or [ Esc ] to close[/i][/color][/center]")
+		lines.append("[color=#c8a84b][b][Rank %s]  %s[/b][/color]" % [q["rank"], tr(q["title_key"])])
+		lines.append("[color=#6b4f2a]  %s %s[/color]" % [tr("QUEST_POSTED_BY"), tr(q["giver_key"])])
+		lines.append("  %s" % tr(q["desc_key"]))
+		lines.append("[color=#5a8a3c]  %s %s[/color]\n" % [tr("QUEST_REWARD"), tr(q["reward_key"])])
+	lines.append("\n[center][color=#888][i]%s[/i][/color][/center]" % tr("QUEST_CLOSE_HINT"))
 	return "\n".join(lines)

@@ -16,7 +16,7 @@ func _ready() -> void:
 
 func _build_hint_label() -> void:
 	_hint = Label3D.new()
-	_hint.text        = "[ F ]  View Quest Board"
+	_hint.text        = tr("HINT_QUEST_BOARD")
 	_hint.billboard   = BaseMaterial3D.BILLBOARD_ENABLED
 	_hint.font_size   = 26
 	_hint.pixel_size  = 0.007
