@@ -43,10 +43,48 @@ var _current_anim : String          = ""
 var _was_on_floor : bool            = true
 var _air_time     : float           = 0.0
 
+# Synced over the network so remote players show the correct animation.
+var net_anim : int = 0
+
 
 func _ready() -> void:
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	# In multiplayer, mouse capture is deferred to _setup_multiplayer so
+	# non-authoritative (remote) instances don't interfere with the local mouse.
+	if not multiplayer.has_multiplayer_peer():
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	_setup_animations.call_deferred()
+	_setup_multiplayer.call_deferred()
+
+
+# ── Multiplayer authority ─────────────────────────────────────────────────────
+
+func _is_mine() -> bool:
+	if not multiplayer.has_multiplayer_peer():
+		return true
+	return is_multiplayer_authority()
+
+
+func _setup_multiplayer() -> void:
+	if not multiplayer.has_multiplayer_peer():
+		return
+
+	if _is_mine():
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	else:
+		# Remote player: disable this instance's camera.
+		camera.current = false
+
+	# Build a MultiplayerSynchronizer that replicates position, visual rotation,
+	# and animation state to all peers.
+	var sync   := MultiplayerSynchronizer.new()
+	var config := SceneReplicationConfig.new()
+	for path_str in [".:position", ".:rotation", "Pivot:rotation", ".:net_anim"]:
+		var p := NodePath(path_str)
+		config.add_property(p)
+		config.property_set_spawn(p, true)
+		config.property_set_replication_mode(p, SceneReplicationConfig.REPLICATION_MODE_ALWAYS)
+	sync.replication_config = config
+	add_child(sync)
 
 
 # ── Animation setup ───────────────────────────────────────────────────────────
@@ -130,6 +168,8 @@ func _enter_anim_state(new_state: AnimState) -> void:
 # ── Input ─────────────────────────────────────────────────────────────────────
 
 func _input(event: InputEvent) -> void:
+	if not _is_mine():
+		return
 	if state == State.BOARD_VIEW:
 		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact"):
 			get_viewport().set_input_as_handled()
@@ -137,6 +177,8 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not _is_mine():
+		return
 	if state != State.NORMAL:
 		return
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
@@ -155,6 +197,13 @@ func _unhandled_input(event: InputEvent) -> void:
 # ── Physics ───────────────────────────────────────────────────────────────────
 
 func _physics_process(delta: float) -> void:
+	if not _is_mine():
+		# Remote player: apply animation from the synced value.
+		var synced_state := net_anim as AnimState
+		if synced_state != _anim_state:
+			_enter_anim_state(synced_state)
+		return
+
 	if state != State.NORMAL:
 		return
 
@@ -201,13 +250,14 @@ func _physics_process(delta: float) -> void:
 		velocity.x = 0.0
 		velocity.z = 0.0
 
+	net_anim = int(_anim_state)
 	move_and_slide()
 
 
 # ── Interaction ray ───────────────────────────────────────────────────────────
 
 func _process(_delta: float) -> void:
-	if state == State.NORMAL:
+	if _is_mine() and state == State.NORMAL:
 		_cast_interaction_ray()
 
 
