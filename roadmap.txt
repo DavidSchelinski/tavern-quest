@@ -1,0 +1,268 @@
+================================================================================
+  TAVERN QUEST – ROADMAP
+================================================================================
+
+VISION
+------
+Ein kooperatives Multiplayer-RPG in dem Spieler gemeinsam oder alleine Quests
+annehmen, Monster besiegen und aufsteigen. Die Taverne dient als zentraler
+Treffpunkt. Ein Spieler hostet die Welt – alle anderen verbinden sich zu ihm.
+
+
+================================================================================
+  PHASE 1 – FUNDAMENT (laufend)
+================================================================================
+
+[x] Spieler-Bewegung (Walk, Sprint, Jump mit Animationen)
+[x] Third-Person-Kamera mit SpringArm
+[x] Interaktionssystem (Raycast, Interactable-Gruppe)
+[x] Quest-Board (Grundstruktur)
+[x] Taverne (Szene, Barkeeper-NPC)
+[x] Animationsübergänge (Blending)
+[x] Bewegungslogik gekoppelt an Animationszustand
+
+[ ] Spieler-Charakterauswahl / Name vergeben
+[ ] Grundlegendes UI-Framework (HUD, Menü-Fenster, Dialoge)
+[ ] Hauptmenü (Spiel starten, Hosten, Beitreten, Beenden)
+[ ] Einstellungen (Lautstärke, Grafik, Steuerung)
+[ ] Speichersystem (Spielerdaten lokal persistieren)
+
+
+================================================================================
+  PHASE 2 – CHARAKTERSYSTEM
+================================================================================
+
+CHARAKTER-BEWERTUNG (Onboarding)
+  Beim ersten Start wird der Spieler bewertet. Eine Reihe kurzer Aktivitäten
+  oder Fragen ermittelt die Grundwerte. Diese sind dann fest und bestimmen
+  den bevorzugten Kampfstil.
+
+  Primäre Attribute:
+    - Stärke       → Nahkampfschaden, Traglast
+    - Beweglichkeit → Ausweichen, Angriffsgeschwindigkeit, Klettern
+    - Verteidigung  → Schadensreduktion, Blocken
+    - Ausdauer      → Stamina-Pool, Resistenz gegen Erschöpfung
+    - Wahrnehmung   → Entdecken von Feinden/Schätzen, Fernkampfgenauigkeit
+    - Willenskraft  → Magiestärke, Statusresistenz, Führungsbonus
+    - Charisma      → NPC-Rekrutierung, bessere Questbelohnungen, Handel
+
+  Sekundäre Werte (abgeleitet):
+    - HP, Stamina, Mana
+    - Kritische Trefferchance / -schaden
+    - Bewegungsgeschwindigkeit (modifiziert durch Beweglichkeit)
+    - Gewichtskapazität (modifiziert durch Stärke)
+
+RANG-SYSTEM
+  Ränge: F → E → D → C → B → A → S → S+ → S++
+  - Jeder Spieler startet bei F-Rang
+  - Rang steigt durch gesammelte Erfahrungspunkte aus Quests
+  - Rang bestimmt welche Quests angenommen werden dürfen
+  - Höherer Rang schaltet neue Gebiete, Ausrüstung und NPC-Rekruten frei
+
+[ ] Attribut-Datensstruktur (Resource-Klasse)
+[ ] Onboarding-Sequenz / Bewertungstest
+[ ] Rang-System mit XP-Kurve
+[ ] Charakter-UI (Stats-Übersicht, Rang-Anzeige)
+[ ] Levelup / Rang-Aufstieg Logik + Feier-Effekt
+
+
+================================================================================
+  PHASE 3 – ABENTEUERGRUPPEN
+================================================================================
+
+KONZEPT
+  Jeder Spieler kann alleine spielen oder eine Abenteuergruppe bilden.
+  Gruppenslots: 1-4 Teilnehmer (Spieler, NPCs oder gezähmte Kreaturen).
+
+GRUPPENREGELN
+  - Mindestring für Quests = niedrigster Rang aller menschlichen Gruppenmitglieder
+  - Belohnungen werden gleichmäßig geteilt (XP und Gold)
+  - Gruppenführer nimmt Quest an, alle Mitglieder müssen bestätigen
+  - Gruppe wird automatisch aufgelöst wenn Quest abgeschlossen oder alle tot
+
+SOLO-BEGLEITER
+  - NPC-Rekruten: in der Taverne oder Welt anwerben (Charisma-Abhängig)
+    Typen: Krieger, Heiler, Bogenschütze, Magier
+  - Gezähmte Kreaturen: in der Welt gefunden/gebändigt
+    Typen: Wolf, Bär, Adler, Golem usw.
+  - Begleiter haben eigene KI, vereinfachtes Attributsystem und eigenen Rang
+
+[ ] Gruppen-Datensstruktur (Mitgliederliste, Rang-Check)
+[ ] Gruppen-UI (Übersicht, Einladen, Verlassen)
+[ ] NPC-Begleiter-System (Rekrutierung, KI, Basis-Kampf)
+[ ] Kreaturen-Zähmungssystem
+[ ] Belohnungsaufteilung-Logik
+
+
+================================================================================
+  PHASE 4 – QUEST-SYSTEM
+================================================================================
+
+QUEST-TYPEN
+  - Besiege [Feind / Boss]                    (Kampf)
+  - Sammle / Such nach [Gegenstand]           (Erkundung)
+  - Hilf [Dorf / NPC] in [Gebiet]            (Event-Quest)
+  - Eskortiere [NPC] von A nach B            (Schutz)
+  - Erkunde [Dungeon / Gebiet]               (Entdeckung)
+  - Liefere [Gegenstand] an [NPC]            (Botengänge)
+
+QUEST-RANG-ÜBERSICHT
+  Rang  Gegner-Stärke    Belohnung   Beispiel
+  F     Ratten, Goblins  gering      Keller von Ratten befreien
+  E     Wölfe, Banditen  moderat     Banditencamp zerstören
+  D     Oger, Untote     ordentlich  Friedhof säubern
+  C     Drachen (klein)  gut         Drachennest ausräuchern
+  B     Riesen, Dämonen  sehr gut    Riesenangriff abwehren
+  A     Legendenmonster  exzellent   Alten Drachen erlegen
+  S     Weltbedrohungen  episch      Dämonenfürst versiegeln
+  S+    ---              legendär    ---
+  S++   ---              mythisch    ---
+
+QUEST-ABLAUF
+  1. Quest-Board in Taverne → Auswahl nach verfügbaren Rängen
+  2. Quest annehmen → Briefing-Dialog mit Auftraggeber-NPC
+  3. Welt-Ziel wird markiert (Karte / Kompass)
+  4. Quest erfüllen
+  5. Zurück zur Taverne oder direktes Abschließen in der Welt
+  6. Belohnung empfangen → XP, Gold, evtl. Spezialgegenstand
+
+[ ] Quest-Datenstruktur (Resource-Klasse mit Rang, Typ, Ziel, Belohnung)
+[ ] Quest-Board UI (gefiltert nach Rang, sortierbar)
+[ ] Quest-Tracker (HUD-Anzeige aktiver Quest, Zielmarkierung)
+[ ] Quest-Generator (prozedural für F-C) + handgefertigte S-Quests
+[ ] Quest-Abschluss-Logik + Belohnungsverteilung
+[ ] Auftraggeber-NPC-Dialoge
+
+
+================================================================================
+  PHASE 5 – MULTIPLAYER (Godot High-Level Multiplayer API)
+================================================================================
+
+ARCHITEKTUR
+  Godot's ENet-basierter Multiplayer wird verwendet.
+  Ein Spieler übernimmt die Host-Rolle (listen-server):
+    - Startet den Server lokal
+    - Tritt selbst als Spieler bei
+    - Andere Spieler verbinden sich über IP:Port oder später Relay-Server
+
+  Keine dedizierte Server-Binärdatei notwendig für den Anfang.
+  Optional später: Export als dedizierten headless Server.
+
+NETZWERK-SCOPE
+  Was synchronisiert wird:
+    - Spielerpositionen und Animationen (MultiplayerSynchronizer)
+    - Quest-Zustand der Gruppe (zentral beim Host)
+    - Gesundheit, Statuseffekte
+    - Gegner-KI und Positionen (host-autoritär)
+    - Chat-Nachrichten
+    - Gruppeneinladungen / -aktionen
+
+  Was lokal bleibt:
+    - Kamera-Steuerung
+    - UI-Zustand
+    - Eingabe
+
+LOBBY-FLOW
+  Hauptmenü
+    ├── Spiel hosten → Port eingeben → Welt laden → andere warten auf Join
+    └── Spiel beitreten → IP:Port eingeben → verbinden → Charakter laden
+
+[ ] Netzwerk-Manager (Singleton: starten, hosten, joinen, trennen)
+[ ] Spieler-Spawning über Netzwerk (jeder Spieler spawnt seinen Charakter)
+[ ] MultiplayerSynchronizer für Bewegung + Animation
+[ ] RPC-System für Aktionen (Quests annehmen, Gruppen bilden, Schaden)
+[ ] Lobby / Warteraum UI
+[ ] Chat-System
+[ ] Host-Migration (optional: wenn Host geht, neuer Host wird bestimmt)
+[ ] Verbindungsfehler-Handling (Timeout, Reconnect)
+
+
+================================================================================
+  PHASE 6 – KAMPFSYSTEM
+================================================================================
+
+KONZEPT
+  Echtzeit-Kampf, Attribute beeinflussen Werte, kein rundenbasiertes System.
+
+  Aktionen:
+    - Leichtangriff (schnell, wenig Schaden)
+    - Schwereangriff (langsam, viel Schaden, unterbrechbar)
+    - Ausweichen / Rollen (Stamina-Kosten)
+    - Blocken (Verteidigung + Stamina)
+    - Spezialangriff (je nach Klasse/Attributverteilung)
+    - Magie / Fähigkeiten (Mana-Kosten)
+
+  Statuseffekte: Vergiftet, Betäubt, Geschwächt, Brennend, Gefroren usw.
+
+[ ] Hitbox / Hurtbox System
+[ ] Schaden-Formel (Angriff vs Verteidigung, Krit-Berechnung)
+[ ] Stamina-System
+[ ] Gegner-KI (Basisklassen: Nah, Fern, Magie)
+[ ] Gegner-Ränge (F-S) mit skalierten Werten
+[ ] Boss-Kämpfe (besondere Angriffsmuster)
+[ ] Statuseffekt-System
+[ ] Tod / Respawn-Logik (in Gruppe: andere können wiederbeleben)
+
+
+================================================================================
+  PHASE 7 – WELT & INHALTE
+================================================================================
+
+WELT-STRUKTUR
+  - Taverne (Hub) → Zentraler Start
+  - Umgebung der Taverne (Tutorial-Gebiet, F-E Quests)
+  - Wald          (E-D Rang)
+  - Bergdorf      (C-B Rang, Dorf-Hilfe-Quests)
+  - Ruinen        (B-A Rang)
+  - Dämonengebiet (S Rang)
+
+[ ] Welt-Streaming / Szenen-Wechsel zwischen Gebieten
+[ ] Karte / Minimap
+[ ] Tag-Nacht-Zyklus (beeinflusst Gegnertypen)
+[ ] Wetter-System (optional)
+[ ] Loot-System (Gegenstände, Seltenheitsstufen)
+[ ] Inventar-System
+[ ] Ausrüstungs-System (Waffe, Rüstung, Accessoire)
+[ ] Händler-NPCs in der Taverne
+[ ] Handgefertigte S-Quests (Story-Quests)
+
+
+================================================================================
+  PHASE 8 – POLISH & RELEASE
+================================================================================
+
+[ ] Sound-Design (Schritte, Kampf, Umgebung, Musik)
+[ ] Partikeleffekte (Kampf, Magie, Levelup)
+[ ] Vollständiges Controller-Support
+[ ] Performance-Optimierung (LOD, Culling, Netzwerk-Batching)
+[ ] Fehlerbehandlung und Edge-Cases
+[ ] Spieler-Feedback einbauen (Beta-Test)
+[ ] Achievements / Erfolge
+[ ] Steam-Integration (optional)
+
+
+================================================================================
+  PRIORISIERTE NÄCHSTE SCHRITTE
+================================================================================
+
+  1. UI-Framework (HUD, Dialoge) – alles andere baut darauf auf
+  2. Charakter-Datensstruktur + Rang-System
+  3. Quest-System (Daten + Board)
+  4. Basis-Kampfsystem (ohne Netzwerk)
+  5. Multiplayer-Fundament (Hosten/Joinen, Spieler-Sync)
+  6. Gruppen-System über Netzwerk
+  7. Welt-Inhalte (Gebiete, Gegner, Quests befüllen)
+
+
+================================================================================
+  OFFENE ENTSCHEIDUNGEN
+================================================================================
+
+  - Taverne oder Gilde als Hub? (beeinflusst Namensgebung + Atmosphäre)
+  - Klassen-System oder nur Attribut-basiert?
+  - Feste Welt oder prozedural generierte Dungeons?
+  - Relay-Server (für einfachen Join ohne Port-Weiterleitung) – Steam, EOS?
+  - Maximale Spieleranzahl pro Server (4, 8, 16?)
+
+
+================================================================================

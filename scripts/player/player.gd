@@ -16,6 +16,7 @@ const PITCH_MIN         := -70.0
 const PITCH_MAX         := 20.0
 const RAY_LENGTH        := 5.0
 const ROT_SPEED         := 12.0   # pivot turn speed (rad/s)
+const AIR_CONTROL       := 0.2    # fraction of ground speed usable while airborne
 
 # Animation names from UAL1_Standard.glb (library is root "", so no prefix).
 const ANIM_IDLE   := "Idle"
@@ -40,6 +41,7 @@ var _anim_player  : AnimationPlayer = null
 var _anim_state   : AnimState       = AnimState.IDLE
 var _current_anim : String          = ""
 var _was_on_floor : bool            = true
+var _air_time     : float           = 0.0
 
 
 func _ready() -> void:
@@ -60,12 +62,12 @@ func _setup_animations() -> void:
 	_play_anim(ANIM_IDLE)
 
 
-func _play_anim(anim: String, speed_scale: float = 1.0) -> void:
+func _play_anim(anim: String, speed_scale: float = 1.0, blend: float = 0.15) -> void:
 	if _anim_player == null or anim == "" or _current_anim == anim:
 		return
 	_current_anim = anim
 	_anim_player.speed_scale = speed_scale
-	_anim_player.play(anim)
+	_anim_player.play(anim, blend)
 
 
 func _on_anim_finished(anim_name: String) -> void:
@@ -88,8 +90,16 @@ func _update_anim_state(moving: bool, sprinting: bool) -> void:
 		# Already airborne
 		new_state = AnimState.JUMP if velocity.y > 0.5 else AnimState.FALL
 	elif on_floor and not _was_on_floor:
-		# Just landed
-		new_state = AnimState.LAND
+		# Just landed — only play the full land animation for falls longer than 2 s.
+		var hard_landing := _air_time >= 2.0
+		_air_time = 0.0
+		if hard_landing:
+			new_state = AnimState.LAND
+		else:
+			# Short fall: blend straight into movement or idle.
+			new_state = AnimState.SPRINT if (moving and sprinting) \
+					else AnimState.WALK  if moving \
+					else AnimState.IDLE
 	elif on_floor:
 		if _anim_state == AnimState.LAND:
 			# Let _on_anim_finished handle the exit
@@ -112,9 +122,9 @@ func _enter_anim_state(new_state: AnimState) -> void:
 		AnimState.IDLE:   _play_anim(ANIM_IDLE)
 		AnimState.WALK:   _play_anim(ANIM_WALK)
 		AnimState.SPRINT: _play_anim(ANIM_SPRINT)
-		AnimState.JUMP:   _play_anim(ANIM_JUMP)
-		AnimState.FALL:   _play_anim(ANIM_FALL)
-		AnimState.LAND:   _play_anim(ANIM_LAND)
+		AnimState.JUMP:   _play_anim(ANIM_JUMP, 1.0, 0.1)
+		AnimState.FALL:   _play_anim(ANIM_FALL, 1.0, 0.1)
+		AnimState.LAND:   _play_anim(ANIM_LAND, 1.0, 0.1)
 
 
 # ── Input ─────────────────────────────────────────────────────────────────────
@@ -148,32 +158,48 @@ func _physics_process(delta: float) -> void:
 	if state != State.NORMAL:
 		return
 
-	if not is_on_floor():
+	var on_floor := is_on_floor()
+
+	if not on_floor:
+		_air_time += delta
 		velocity.y -= GRAVITY * delta
 
-	if Input.is_action_just_pressed("jump") and is_on_floor():
+	if Input.is_action_just_pressed("jump") and on_floor:
 		velocity.y = JUMP_VELOCITY
 
-	var sprinting  := Input.is_action_pressed("sprint")
-	var speed      := SPRINT_SPEED if sprinting else WALK_SPEED
-	var input_dir  := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var sprinting := Input.is_action_pressed("sprint")
+	var speed     := SPRINT_SPEED if sprinting else WALK_SPEED
+	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 
 	var direction := Vector3.ZERO
 	if input_dir != Vector2.ZERO:
 		direction = (camera_yaw.transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
-	if direction != Vector3.ZERO:
-		velocity.x = direction.x * speed
-		velocity.z = direction.z * speed
-		# Rotate visual pivot so its -Z faces the movement direction.
-		var target_angle := atan2(-direction.x, -direction.z)
-		pivot.rotation.y  = rotate_toward(pivot.rotation.y, target_angle, ROT_SPEED * delta)
-	else:
-		velocity.x = move_toward(velocity.x, 0, speed)
-		velocity.z = move_toward(velocity.z, 0, speed)
-
 	var moving := direction != Vector3.ZERO
+
+	# Update animation state first — movement constraints depend on it.
 	_update_anim_state(moving, sprinting)
+
+	if not on_floor:
+		# Weak air control: player can nudge direction but cannot steer freely.
+		if direction != Vector3.ZERO:
+			var air_speed := speed * AIR_CONTROL
+			velocity.x = move_toward(velocity.x, direction.x * air_speed, 5.0 * delta)
+			velocity.z = move_toward(velocity.z, direction.z * air_speed, 5.0 * delta)
+	elif _anim_state == AnimState.WALK or _anim_state == AnimState.SPRINT:
+		# Full ground movement only while walk/sprint animation is active.
+		if direction != Vector3.ZERO:
+			velocity.x = direction.x * speed
+			velocity.z = direction.z * speed
+			var target_angle := atan2(-direction.x, -direction.z)
+			pivot.rotation.y = rotate_toward(pivot.rotation.y, target_angle, ROT_SPEED * delta)
+		else:
+			velocity.x = move_toward(velocity.x, 0, speed)
+			velocity.z = move_toward(velocity.z, 0, speed)
+	else:
+		# On floor but not in a movement animation (idle, land, …): stop immediately.
+		velocity.x = 0.0
+		velocity.z = 0.0
 
 	move_and_slide()
 
