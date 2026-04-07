@@ -40,11 +40,15 @@ const ANIM_SWORD_ATTACK := "Sword_Attack"
 const ANIM_SWORD_IDLE   := "Sword_Idle"
 
 # ── Runtime state ─────────────────────────────────────────────────────────────
-var _press_time  : float  = 0.0
-var _pressing    : bool   = false
-var _combo       : String = ""   # e.g. "LLH"
-var _combo_timer : float  = 0.0
-var _pending     : String = ""   # buffered input while an attack is playing
+var _press_time    : float  = 0.0
+var _pressing      : bool   = false
+var _combo         : String = ""   # e.g. "LLH"
+var _combo_timer   : float  = 0.0
+var _pending       : String = ""   # buffered input while an attack is playing
+var _hitbox_active : bool   = false
+var _hitbox_time   : float  = 0.0
+const HITBOX_DURATION := 0.25      # seconds the hitbox stays active
+var _hitbox_hit_ids : Array = []   # bodies already hit this swing
 
 # ── External references (injected by player.gd) ───────────────────────────────
 var _player  : CharacterBody3D = null
@@ -58,6 +62,7 @@ func setup(player: CharacterBody3D, anim_player: AnimationPlayer, hitbox: Area3D
 	_hitbox = hitbox
 	if _hitbox:
 		_hitbox.body_entered.connect(_on_hitbox_entered)
+		_hitbox.area_entered.connect(_on_hitbox_area_entered)
 		_hitbox.monitoring = false
 
 
@@ -86,6 +91,22 @@ func handle_input(event: InputEvent) -> void:
 func tick(delta: float) -> void:
 	if _pressing:
 		_press_time += delta
+
+	# Poll hitbox overlaps every physics frame while active
+	if _hitbox_active and _hitbox != null:
+		_hitbox_time += delta
+		if _hitbox_time >= HITBOX_DURATION:
+			_hitbox_active = false
+			_hitbox_hit_ids.clear()
+			_hitbox.set_deferred("monitoring", false)
+		elif _hitbox.monitoring:
+			for body in _hitbox.get_overlapping_bodies():
+				if body.get_instance_id() not in _hitbox_hit_ids:
+					_on_hitbox_entered(body)
+			for area in _hitbox.get_overlapping_areas():
+				var parent := area.get_parent()
+				if parent != null and parent.get_instance_id() not in _hitbox_hit_ids:
+					_on_hitbox_area_entered(area)
 
 	if not _player.is_attacking and _combo_timer > 0.0:
 		_combo_timer -= delta
@@ -181,27 +202,41 @@ func _arm_hitbox(dmg: float) -> void:
 		return
 	_hitbox.set_meta("dmg", dmg)
 	_hitbox.monitoring = true
+	_hitbox_active = true
+	_hitbox_time   = 0.0
+	print("[CombatHandler] Hitbox armed — pos: ", _hitbox.global_position, " dmg: ", dmg)
+	print("[CombatHandler] Hitbox global_transform: ", _hitbox.global_transform)
+	# Check for nearby dummies for debug
+	for node in _player.get_tree().get_nodes_in_group("dummy"):
+		print("[CombatHandler]   Dummy '", node.name, "' at ", node.global_position,
+			" dist=", _hitbox.global_position.distance_to(node.global_position))
 
-	# Godot's body_entered only fires for NEW overlaps. Check bodies that are
-	# already inside the area at the moment monitoring is switched on.
-	for body in _hitbox.get_overlapping_bodies():
-		_on_hitbox_entered(body)
 
-	get_tree().create_timer(0.18).timeout.connect(func():
-		if is_instance_valid(_hitbox):
-			_hitbox.set_deferred("monitoring", false)
-	)
+func _on_hitbox_area_entered(area: Area3D) -> void:
+	var body := area.get_parent()
+	if body != null and body.has_method("take_damage"):
+		print("[CombatHandler] area_entered -> parent: ", body.name)
+		_do_damage(body)
 
 
 func _on_hitbox_entered(body: Node3D) -> void:
-	if not _player._is_mine() or body == _player:
+	print("[CombatHandler] body_entered: ", body.name, " groups: ", body.get_groups())
+	if body == _player:
+		return
+	_do_damage(body)
+
+
+func _do_damage(body: Node3D) -> void:
+	if not _player._is_mine():
+		return
+	if body.get_instance_id() in _hitbox_hit_ids:
 		return
 	if not body.has_method("take_damage"):
+		print("[CombatHandler]   skipped (no take_damage method on ", body.name, ")")
 		return
+	_hitbox_hit_ids.append(body.get_instance_id())
 	var dmg : float = _hitbox.get_meta("dmg", 10.0)
-	# Must use set_deferred — can't change monitoring inside a body_entered signal
-	_hitbox.set_deferred("monitoring", false)
-	# Only non-server peers use rpc_id; server (and SP) calls directly
+	print("[CombatHandler]   HIT! Dealing ", dmg, " damage to ", body.name)
 	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
 		body.take_damage.rpc_id(1, dmg)
 	else:
@@ -212,6 +247,9 @@ func _reset() -> void:
 	_combo               = ""
 	_pending             = ""
 	_combo_timer         = 0.0
+	_hitbox_active       = false
+	_hitbox_time         = 0.0
+	_hitbox_hit_ids.clear()
 	_player.is_attacking = false
 	_player.net_combat   = 0
 	if _hitbox:

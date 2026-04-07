@@ -1,10 +1,12 @@
-extends AnimatableBody3D
+extends StaticBody3D
 
-const MAX_HEALTH   := 100.0
+const MAX_HEALTH   := 15.0
 const RESPAWN_TIME := 5.0
 const BOB_HEIGHT   := 0.25   # metres
 const BOB_SPEED    := 1.3    # cycles per second
 const SPIN_SPEED   := 0.6    # rotations per second
+
+@export var drop_item : ItemData = null
 
 var health : float = MAX_HEALTH
 
@@ -16,10 +18,29 @@ var _base_y : float = 0.0
 var _dead   : bool  = false
 
 
+var _hurt_area : Area3D = null
+
+
 func _ready() -> void:
 	add_to_group("dummy")
 	_base_y = position.y + 1.6
 	_update_glow()
+	_setup_hurt_area()
+
+
+func _setup_hurt_area() -> void:
+	_hurt_area = Area3D.new()
+	_hurt_area.name = "HurtArea"
+	_hurt_area.collision_layer = 4
+	_hurt_area.collision_mask  = 0
+	_hurt_area.monitorable    = true
+	_hurt_area.monitoring     = false
+	var col := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(0.8, 0.8, 0.8)
+	col.shape = shape
+	_hurt_area.add_child(col)
+	add_child(_hurt_area)
 
 
 func _process(delta: float) -> void:
@@ -72,6 +93,19 @@ func _show_destroy() -> void:
 	_dead   = true
 	visible = false
 	_col.set_deferred("disabled", true)
+	_drop_loot()
+
+
+func _drop_loot() -> void:
+	if drop_item == null:
+		return
+	var scene := load("res://scenes/world/pickable_item.tscn") as PackedScene
+	if scene == null:
+		return
+	var inst := scene.instantiate()
+	inst.item_data = drop_item
+	get_parent().add_child(inst)
+	inst.global_position = global_position + Vector3(0, 0.5, 0)
 
 
 func _show_respawn() -> void:

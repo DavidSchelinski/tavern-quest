@@ -59,6 +59,7 @@ script = ExtResource("4_gm")
 
 [node name="TrainingDummy" parent="." instance=ExtResource("5_dummy")]
 position = Vector3(4.0, 0.0, 18.0)
+drop_item = ExtResource("11_gem")
 
 [node name="HealthPotion1" parent="." instance=ExtResource("6_pickable")]
 position = Vector3(-2.0, 0.5, 20.0)

@@ -314,8 +314,8 @@ func _setup_combat() -> void:
 			_sword_hitbox.collision_mask  = 7   # layers 1 (world) + 2 (players) + 4 (dummies)
 			var col   := CollisionShape3D.new()
 			var shape := CapsuleShape3D.new()
-			shape.radius = 0.12   # wider → easier to land hits
-			shape.height = 1.0
+			shape.radius = 0.35   # wider → easier to land hits
+			shape.height = 1.2
 			col.shape    = shape
 			col.position = Vector3(0.0, 0.5, 0.0)
 			_sword_hitbox.add_child(col)
