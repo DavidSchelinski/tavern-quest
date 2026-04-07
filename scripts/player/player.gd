@@ -1,7 +1,7 @@
 extends CharacterBody3D
 
 # ── Interaction state ─────────────────────────────────────────────────────────
-enum State { NORMAL, BOARD_VIEW, MENU, DIALOG }
+enum State { NORMAL, BOARD_VIEW, MENU, DIALOG, INVENTORY }
 
 # ── Animation state machine ───────────────────────────────────────────────────
 enum AnimState { IDLE, WALK, SPRINT, JUMP, FALL, LAND }
@@ -42,6 +42,13 @@ var state                 : State     = State.NORMAL
 var _current_interactable : Node3D    = null
 var _game_menu            : CanvasLayer = null
 var _dialog_ui            : CanvasLayer = null
+var _inventory_ui         : CanvasLayer = null
+
+# ── Pickup focus ──────────────────────────────────────────────────────────────
+const PICKUP_RADIUS       := 3.0
+const FOCUS_SWITCH_DELAY  := 0.25  # seconds before focus can switch to a new item
+const FOCUS_STICK_BIAS    := 0.15  # score advantage needed to steal focus from current
+var _focus_cooldown       : float  = 0.0
 
 # ── Animation ─────────────────────────────────────────────────────────────────
 var _anim_player  : AnimationPlayer = null
@@ -69,6 +76,7 @@ func _ready() -> void:
 	_setup_multiplayer.call_deferred()
 	_setup_game_menu.call_deferred()
 	_setup_dialog_ui.call_deferred()
+	_setup_inventory_ui.call_deferred()
 	_setup_combat.call_deferred()
 
 
@@ -135,6 +143,33 @@ func enter_dialog() -> void:
 
 
 func exit_dialog() -> void:
+	state = State.NORMAL
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+
+# ── Inventory ─────────────────────────────────────────────────────────────────
+
+func _setup_inventory_ui() -> void:
+	if not _is_mine():
+		return
+	var ui_script := load("res://scripts/ui/inventory_ui.gd")
+	_inventory_ui = CanvasLayer.new()
+	_inventory_ui.set_script(ui_script)
+	add_child(_inventory_ui)
+	_inventory_ui.closed.connect(_on_inventory_closed)
+
+
+func _open_inventory() -> void:
+	if _inventory_ui == null:
+		return
+	state = State.INVENTORY
+	velocity.x = 0.0
+	velocity.z = 0.0
+	_enter_anim_state(AnimState.IDLE)
+	_inventory_ui.open(self)
+
+
+func _on_inventory_closed() -> void:
 	state = State.NORMAL
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
@@ -322,6 +357,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_open_game_menu()
 		return
+	if event.is_action_pressed("inventory"):
+		_open_inventory()
+		return
 	if event.is_action_pressed("interact") and _current_interactable:
 		_current_interactable.interact(self)
 		return
@@ -341,7 +379,7 @@ func _physics_process(delta: float) -> void:
 	if state == State.BOARD_VIEW:
 		return
 
-	if state == State.MENU or state == State.DIALOG:
+	if state == State.MENU or state == State.DIALOG or state == State.INVENTORY:
 		if not is_on_floor():
 			velocity.y -= GRAVITY * delta
 		velocity.x = 0.0
@@ -429,12 +467,15 @@ func _apply_remote_animations() -> void:
 
 # ── Interaction ray ───────────────────────────────────────────────────────────
 
-func _process(_delta: float) -> void:
-	if _is_mine() and state == State.NORMAL:
-		_cast_interaction_ray()
+func _process(delta: float) -> void:
+	if not _is_mine() or state != State.NORMAL:
+		return
+	_focus_cooldown = maxf(_focus_cooldown - delta, 0.0)
+	_update_interactable_focus()
 
 
-func _cast_interaction_ray() -> void:
+func _update_interactable_focus() -> void:
+	# 1) Raycast — prioritises non-pickable interactables (NPCs, quest board, etc.)
 	var space  := get_world_3d().direct_space_state
 	var origin := camera.global_position
 	var fwd    := -camera.global_transform.basis.z
@@ -442,21 +483,74 @@ func _cast_interaction_ray() -> void:
 	query.exclude = [get_rid()]
 	var result := space.intersect_ray(query)
 
-	var found: Node3D = null
+	var ray_hit : Node3D = null
 	if result and result.collider.is_in_group("interactable"):
-		var node: Node = result.collider
+		var node : Node = result.collider
 		while node != null:
 			if node.has_method("interact"):
-				found = node as Node3D
+				ray_hit = node as Node3D
 				break
 			node = node.get_parent()
 
-	if found != _current_interactable:
-		if _current_interactable and _current_interactable.has_method("on_look_away"):
-			_current_interactable.on_look_away()
-		_current_interactable = found
-		if _current_interactable and _current_interactable.has_method("on_look_at"):
-			_current_interactable.on_look_at()
+	# If the raycast found a non-pickable interactable, use it directly.
+	if ray_hit != null and not ray_hit.is_in_group("pickable"):
+		_set_interactable(ray_hit)
+		return
+
+	# 2) Among nearby pickable items, choose the best one (distance + aim).
+	var best : Node3D = null
+	var best_score := -INF
+	var pickables := get_tree().get_nodes_in_group("pickable")
+
+	for p : Node3D in pickables:
+		if not is_instance_valid(p):
+			continue
+		var dist : float = global_position.distance_to(p.global_position)
+		if dist > PICKUP_RADIUS:
+			continue
+		var to_item := (p.global_position - origin).normalized() as Vector3
+		var dot : float = fwd.dot(to_item)
+		# Only consider items roughly in front of the camera (> ~60 deg cone).
+		if dot < 0.3:
+			continue
+		# Score: higher dot = more centered, closer = better.
+		var score : float = dot - dist * 0.15
+		if score > best_score:
+			best_score = score
+			best = p
+
+	# Also accept a raycast-hit pickable that scored well.
+	if ray_hit != null and ray_hit.is_in_group("pickable") and best == null:
+		best = ray_hit
+
+	# 3) Hysteresis — resist switching if the current target is still valid.
+	if best != _current_interactable and _current_interactable != null \
+		and is_instance_valid(_current_interactable) \
+		and _current_interactable.is_in_group("pickable"):
+		var cur_dist := global_position.distance_to(_current_interactable.global_position)
+		if cur_dist <= PICKUP_RADIUS:
+			var to_cur := (_current_interactable.global_position - origin).normalized()
+			var cur_dot := fwd.dot(to_cur)
+			# Current target must still be roughly in front of the camera.
+			if cur_dot >= 0.25:
+				var cur_score := cur_dot - cur_dist * 0.15
+				if best != null and best_score - cur_score < FOCUS_STICK_BIAS:
+					best = _current_interactable
+			# If current target is no longer in front, let it go (no sticking).
+
+	_set_interactable(best)
+
+
+func _set_interactable(target: Node3D) -> void:
+	if target == _current_interactable:
+		return
+	if _current_interactable and is_instance_valid(_current_interactable) \
+		and _current_interactable.has_method("on_look_away"):
+		_current_interactable.on_look_away()
+	_current_interactable = target
+	if _current_interactable and _current_interactable.has_method("on_look_at"):
+		_current_interactable.on_look_at()
+	_focus_cooldown = FOCUS_SWITCH_DELAY
 
 
 # ── Board view ────────────────────────────────────────────────────────────────

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/inventory/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "gold_coin"
+display_name = "Gold Coin"
+description = "A shiny gold coin."
+stackable = true
+max_stack = 999
+mesh_color = Color(0.95, 0.8, 0.15, 1)

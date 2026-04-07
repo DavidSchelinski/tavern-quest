@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/inventory/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "iron_nails"
+display_name = "Iron Nails"
+description = "A handful of iron nails. Useful for repairs."
+stackable = true
+max_stack = 99
+mesh_color = Color(0.6, 0.58, 0.55, 1)

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/inventory/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "mysterious_gem"
+display_name = "Mysterious Gem"
+description = "A gem that pulses with faint light."
+stackable = false
+max_stack = 1
+mesh_color = Color(0.4, 0.2, 0.85, 1)

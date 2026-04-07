@@ -4,6 +4,12 @@
 [ext_resource type="Script" uid="uid://51casnr35vyy" path="res://scripts/world/day_night_cycle.gd" id="3_dnc"]
 [ext_resource type="Script" uid="uid://c3npjwmecc7jy" path="res://scripts/world/game_manager.gd" id="4_gm"]
 [ext_resource type="PackedScene" uid="uid://training_dummy001" path="res://scenes/world/training_dummy.tscn" id="5_dummy"]
+[ext_resource type="PackedScene" path="res://scenes/world/pickable_item.tscn" id="6_pickable"]
+[ext_resource type="Resource" path="res://data/items/health_potion.tres" id="7_potion"]
+[ext_resource type="Resource" path="res://data/items/iron_nails.tres" id="8_nails"]
+[ext_resource type="Resource" path="res://data/items/gold_coin.tres" id="9_coin"]
+[ext_resource type="Resource" path="res://data/items/wooden_plank.tres" id="10_plank"]
+[ext_resource type="Resource" path="res://data/items/mysterious_gem.tres" id="11_gem"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_001"]
 sky_top_color = Color(0.15843137, 0.31882352, 0.6211765, 1)
@@ -53,3 +59,39 @@ script = ExtResource("4_gm")
 
 [node name="TrainingDummy" parent="." instance=ExtResource("5_dummy")]
 position = Vector3(4.0, 0.0, 18.0)
+
+[node name="HealthPotion1" parent="." instance=ExtResource("6_pickable")]
+position = Vector3(-2.0, 0.5, 20.0)
+item_data = ExtResource("7_potion")
+
+[node name="HealthPotion2" parent="." instance=ExtResource("6_pickable")]
+position = Vector3(-1.5, 0.5, 19.0)
+item_data = ExtResource("7_potion")
+
+[node name="IronNails1" parent="." instance=ExtResource("6_pickable")]
+position = Vector3(1.0, 0.5, 20.5)
+item_data = ExtResource("8_nails")
+
+[node name="IronNails2" parent="." instance=ExtResource("6_pickable")]
+position = Vector3(1.5, 0.5, 21.0)
+item_data = ExtResource("8_nails")
+
+[node name="IronNails3" parent="." instance=ExtResource("6_pickable")]
+position = Vector3(2.0, 0.5, 20.0)
+item_data = ExtResource("8_nails")
+
+[node name="GoldCoin1" parent="." instance=ExtResource("6_pickable")]
+position = Vector3(-1.0, 0.5, 23.0)
+item_data = ExtResource("9_coin")
+
+[node name="GoldCoin2" parent="." instance=ExtResource("6_pickable")]
+position = Vector3(0.5, 0.5, 24.0)
+item_data = ExtResource("9_coin")
+
+[node name="WoodenPlank1" parent="." instance=ExtResource("6_pickable")]
+position = Vector3(3.0, 0.5, 22.0)
+item_data = ExtResource("10_plank")
+
+[node name="MysteriousGem1" parent="." instance=ExtResource("6_pickable")]
+position = Vector3(-3.0, 0.5, 22.0)
+item_data = ExtResource("11_gem")
