@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://tavern001" path="res://scenes/world/tavern.tscn" id="1_tavern"]
 [ext_resource type="Script" uid="uid://51casnr35vyy" path="res://scripts/world/day_night_cycle.gd" id="3_dnc"]
 [ext_resource type="Script" uid="uid://c3npjwmecc7jy" path="res://scripts/world/game_manager.gd" id="4_gm"]
+[ext_resource type="PackedScene" uid="uid://training_dummy001" path="res://scenes/world/training_dummy.tscn" id="5_dummy"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_001"]
 sky_top_color = Color(0.15843137, 0.31882352, 0.6211765, 1)
@@ -49,3 +50,6 @@ shadow_enabled = true
 script = ExtResource("4_gm")
 
 [node name="Players" type="Node3D" parent="GameManager" unique_id=1249423437]
+
+[node name="TrainingDummy" parent="." instance=ExtResource("5_dummy")]
+position = Vector3(4.0, 0.0, 18.0)

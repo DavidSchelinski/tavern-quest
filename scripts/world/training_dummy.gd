@@ -1,0 +1,138 @@
+extends AnimatableBody3D
+
+const MAX_HEALTH   := 100.0
+const RESPAWN_TIME := 5.0
+const BOB_HEIGHT   := 0.25   # metres
+const BOB_SPEED    := 1.3    # cycles per second
+const SPIN_SPEED   := 0.6    # rotations per second
+
+var health : float = MAX_HEALTH
+
+@onready var _mesh  : MeshInstance3D   = $Mesh
+@onready var _light : OmniLight3D      = $OmniLight3D
+@onready var _col   : CollisionShape3D = $CollisionShape3D
+
+var _base_y : float = 0.0
+var _dead   : bool  = false
+
+
+func _ready() -> void:
+	add_to_group("dummy")
+	_base_y = position.y + 1.6
+	_update_glow()
+
+
+func _process(delta: float) -> void:
+	if _dead:
+		return
+	var t := Time.get_ticks_msec() * 0.001
+	position.y  = _base_y + sin(t * BOB_SPEED * TAU) * BOB_HEIGHT
+	rotation.y += SPIN_SPEED * TAU * delta
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Damage entry point
+#   Single-player  → called directly:          body.take_damage(dmg)
+#   Multiplayer    → called via RPC on server:  body.take_damage.rpc_id(1, dmg)
+# ─────────────────────────────────────────────────────────────────────────────
+@rpc("any_peer", "call_remote", "reliable")
+func take_damage(amount: float) -> void:
+	if not _is_authority():
+		return
+	_apply_damage(amount)
+
+
+func _apply_damage(amount: float) -> void:
+	if _dead:
+		return
+	health = maxf(0.0, health - amount)
+
+	if multiplayer.has_multiplayer_peer():
+		_net_hit.rpc(health)          # broadcast visuals + health to all peers
+	else:
+		_show_hit(health)             # single-player: update locally
+
+	if health <= 0.0:
+		if multiplayer.has_multiplayer_peer():
+			_net_destroy.rpc()
+		else:
+			_show_destroy()
+		get_tree().create_timer(RESPAWN_TIME).timeout.connect(_do_respawn)
+
+
+# ── Visual helpers (run on every peer) ───────────────────────────────────────
+
+func _show_hit(new_health: float) -> void:
+	health = new_health
+	_update_glow()
+	_flash_white()
+
+
+func _show_destroy() -> void:
+	_dead   = true
+	visible = false
+	_col.set_deferred("disabled", true)
+
+
+func _show_respawn() -> void:
+	_dead   = false
+	health  = MAX_HEALTH
+	visible = true
+	_col.set_deferred("disabled", false)
+	_update_glow()
+
+
+# ── Multiplayer broadcasts ────────────────────────────────────────────────────
+
+@rpc("authority", "call_local", "unreliable_ordered")
+func _net_hit(new_health: float) -> void:
+	_show_hit(new_health)
+
+
+@rpc("authority", "call_local", "reliable")
+func _net_destroy() -> void:
+	_show_destroy()
+
+
+@rpc("authority", "call_local", "reliable")
+func _net_respawn() -> void:
+	_show_respawn()
+
+
+# ── Respawn (server/SP only) ──────────────────────────────────────────────────
+
+func _do_respawn() -> void:
+	if not _is_authority():
+		return
+	if multiplayer.has_multiplayer_peer():
+		_net_respawn.rpc()
+	else:
+		_show_respawn()
+
+
+# ── Glow / flash ─────────────────────────────────────────────────────────────
+
+func _update_glow() -> void:
+	if not is_inside_tree():
+		return
+	var t   := health / MAX_HEALTH
+	var col := Color(1.0 - t, t * 0.85 + 0.1, 0.15, 1.0)
+	var mat := _mesh.get_surface_override_material(0) as StandardMaterial3D
+	if mat:
+		mat.emission = col
+	_light.light_color = col
+
+
+func _flash_white() -> void:
+	var mat := _mesh.get_surface_override_material(0) as StandardMaterial3D
+	if mat == null:
+		return
+	var t          := health / MAX_HEALTH
+	var target_col := Color(1.0 - t, t * 0.85 + 0.1, 0.15, 1.0)
+	mat.emission = Color(3.0, 3.0, 3.0, 1.0)
+	var tw := create_tween()
+	tw.tween_property(mat, "emission", target_col, 0.25)
+
+
+func _is_authority() -> bool:
+	return not multiplayer.has_multiplayer_peer() or multiplayer.is_server()

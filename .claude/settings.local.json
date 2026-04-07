@@ -17,7 +17,10 @@
       "Bash(export:*)",
       "Bash(ls:*)",
       "Bash(mkdir -p \"/c/Program Files/Godot\")",
-      "Bash(ln -s \"/c/Users/konst/Documents/Godot_v4.6.1-stable_win64.exe/Godot.exe\" \"/c/Program Files/Godot/Godot.exe\")"
+      "Bash(ln -s \"/c/Users/konst/Documents/Godot_v4.6.1-stable_win64.exe/Godot.exe\" \"/c/Program Files/Godot/Godot.exe\")",
+      "Bash(claude mcp:*)",
+      "Bash(du -sh /c/Users/david/Alles/Programme/Godot/Spiele/tavern-quest/assets/*)",
+      "Bash(grep -E \"^[A-Z][a-zA-Z_0-9]{2,40}$\")"
     ]
   }
 }

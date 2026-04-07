@@ -26,6 +26,11 @@ const ANIM_JUMP   := "Jump_Start"   # plays while ascending
 const ANIM_FALL   := "Jump"         # plays at peak / while descending
 const ANIM_LAND   := "Jump_Land"    # plays on touch-down (one-shot)
 
+# ── Sword offset on hand_r bone (tweak in-editor if needed) ──────────────────
+const SWORD_POSITION := Vector3(-0.05,  0.1,  0.0)
+const SWORD_ROTATION := Vector3(0.0,  0.0,  0.0)   # radians
+const SWORD_SCALE    := Vector3(1.0,  1.0,  1.0)
+
 # ── Node refs ─────────────────────────────────────────────────────────────────
 @onready var pivot      : Node3D      = $Pivot
 @onready var camera_yaw : Node3D      = $CameraYaw
@@ -45,14 +50,18 @@ var _current_anim : String          = ""
 var _was_on_floor : bool            = true
 var _air_time     : float           = 0.0
 
-# Synced over the network so remote players show the correct animation.
-var net_anim : int = 0
+# ── Combat ────────────────────────────────────────────────────────────────────
+var is_attacking  : bool = false
+var _combat       : CombatHandler = null
+var _sword_hitbox : Area3D = null
+
+# Synced over the network so remote players show correct animations.
+var net_anim   : int = 0
+var net_combat : int = 0
 
 
 func _ready() -> void:
 	add_to_group("player")
-	# In multiplayer, mouse capture is deferred to _setup_multiplayer so
-	# non-authoritative (remote) instances don't interfere with the local mouse.
 	if not multiplayer.has_multiplayer_peer():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		camera.current = true
@@ -60,6 +69,7 @@ func _ready() -> void:
 	_setup_multiplayer.call_deferred()
 	_setup_game_menu.call_deferred()
 	_setup_dialog_ui.call_deferred()
+	_setup_combat.call_deferred()
 
 
 # ── Multiplayer authority ─────────────────────────────────────────────────────
@@ -73,7 +83,6 @@ func _is_mine() -> bool:
 func _setup_multiplayer() -> void:
 	if not multiplayer.has_multiplayer_peer():
 		return
-
 	if _is_mine():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		camera.current = true
@@ -137,8 +146,6 @@ func _setup_animations() -> void:
 	if _anim_player == null:
 		push_warning("Player: AnimationPlayer not found in character subtree.")
 		return
-	# UAL1_Standard.glb already contains all animations in its root library.
-	# No extra loading required.
 	_anim_player.animation_finished.connect(_on_anim_finished)
 	_play_anim(ANIM_IDLE)
 
@@ -152,6 +159,10 @@ func _play_anim(anim: String, speed_scale: float = 1.0, blend: float = 0.15) -> 
 
 
 func _on_anim_finished(anim_name: String) -> void:
+	# Delegate sword attacks to the combat handler first.
+	if _combat != null:
+		_combat.on_anim_finished(anim_name)
+
 	# LAND is a one-shot — automatically continue to idle or movement.
 	if anim_name == ANIM_LAND:
 		var h_speed := Vector2(velocity.x, velocity.z).length()
@@ -160,30 +171,38 @@ func _on_anim_finished(anim_name: String) -> void:
 		else:
 			_enter_anim_state(AnimState.IDLE)
 
+	# After an attack finishes (no chained combo), resume movement animation.
+	# The combat handler already cleared _current_anim and is_attacking.
+	if anim_name == "Sword_Attack" and not is_attacking:
+		var h_speed := Vector2(velocity.x, velocity.z).length()
+		if h_speed > 0.5:
+			_enter_anim_state(AnimState.SPRINT if Input.is_action_pressed("sprint") else AnimState.WALK)
+		else:
+			_enter_anim_state(AnimState.IDLE)
+
 
 # ── Animation state machine ───────────────────────────────────────────────────
 
 func _update_anim_state(moving: bool, sprinting: bool) -> void:
+	if is_attacking:
+		return   # never interrupt an attack with a movement animation
+
 	var on_floor := is_on_floor()
 	var new_state : AnimState
 
 	if not on_floor and not _was_on_floor:
-		# Already airborne
 		new_state = AnimState.JUMP if velocity.y > 0.5 else AnimState.FALL
 	elif on_floor and not _was_on_floor:
-		# Just landed — only play the full land animation for falls longer than 2 s.
 		var hard_landing := _air_time >= 2.0
 		_air_time = 0.0
 		if hard_landing:
 			new_state = AnimState.LAND
 		else:
-			# Short fall: blend straight into movement or idle.
 			new_state = AnimState.SPRINT if (moving and sprinting) \
 					else AnimState.WALK  if moving \
 					else AnimState.IDLE
 	elif on_floor:
 		if _anim_state == AnimState.LAND:
-			# Let _on_anim_finished handle the exit
 			_was_on_floor = on_floor
 			return
 		new_state = AnimState.SPRINT if (moving and sprinting) \
@@ -198,6 +217,9 @@ func _update_anim_state(moving: bool, sprinting: bool) -> void:
 
 
 func _enter_anim_state(new_state: AnimState) -> void:
+	if is_attacking:
+		_anim_state = new_state   # remember for when attack finishes
+		return
 	_anim_state = new_state
 	match new_state:
 		AnimState.IDLE:   _play_anim(ANIM_IDLE)
@@ -206,6 +228,72 @@ func _enter_anim_state(new_state: AnimState) -> void:
 		AnimState.JUMP:   _play_anim(ANIM_JUMP, 1.0, 0.1)
 		AnimState.FALL:   _play_anim(ANIM_FALL, 1.0, 0.1)
 		AnimState.LAND:   _play_anim(ANIM_LAND, 1.0, 0.1)
+
+
+# ── Combat setup ──────────────────────────────────────────────────────────────
+
+func _setup_combat() -> void:
+	_combat = get_node_or_null("CombatHandler") as CombatHandler
+	if _combat == null:
+		push_warning("Player: CombatHandler node not found.")
+		return
+
+	if not _is_mine():
+		return   # only local player needs an active combat handler
+
+	# Find AnimationPlayer (may not be ready yet if _setup_animations is still deferred)
+	if _anim_player == null:
+		_anim_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
+
+	# Find Skeleton3D by type — its node name varies by GLB import settings
+	var sk_nodes   := find_children("*", "Skeleton3D", true, false)
+	var skeleton   := sk_nodes[0] as Skeleton3D if not sk_nodes.is_empty() else null
+
+	if skeleton == null:
+		push_error("Player: no Skeleton3D found in character subtree.")
+	else:
+		var bone_idx := skeleton.find_bone("hand_r")
+		if bone_idx < 0:
+			push_error("Player: bone 'hand_r' not found. Bone count: %d" % skeleton.get_bone_count())
+		else:
+			# BoneAttachment must be added to the skeleton first,
+			# then bone_name is set so the index can resolve correctly.
+			var attach := BoneAttachment3D.new()
+			attach.name = "SwordAttach"
+			skeleton.add_child(attach)
+			attach.bone_name = "hand_r"
+
+			# Sword mesh
+			var sword_scene : PackedScene = load("res://assets/models/sword_one_handed/sword.fbx")
+			if sword_scene:
+				var sword := sword_scene.instantiate()
+				sword.position = SWORD_POSITION
+				sword.rotation = SWORD_ROTATION
+				sword.scale    = SWORD_SCALE
+				attach.add_child(sword)
+
+			# Hitbox — large capsule to reliably cover the blade arc
+			_sword_hitbox = Area3D.new()
+			_sword_hitbox.name            = "SwordHitbox"
+			_sword_hitbox.collision_layer = 0
+			_sword_hitbox.collision_mask  = 7   # layers 1 (world) + 2 (players) + 4 (dummies)
+			var col   := CollisionShape3D.new()
+			var shape := CapsuleShape3D.new()
+			shape.radius = 0.12   # wider → easier to land hits
+			shape.height = 1.0
+			col.shape    = shape
+			col.position = Vector3(0.0, 0.5, 0.0)
+			_sword_hitbox.add_child(col)
+			attach.add_child(_sword_hitbox)
+
+	_combat.setup(self, _anim_player, _sword_hitbox)
+
+	# Combo window HUD (only for the local player)
+	var hud_script := load("res://scripts/ui/combo_hud.gd")
+	var hud := CanvasLayer.new()
+	hud.set_script(hud_script)
+	add_child(hud)
+	hud.set_combat_handler(_combat)
 
 
 # ── Input ─────────────────────────────────────────────────────────────────────
@@ -236,16 +324,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("interact") and _current_interactable:
 		_current_interactable.interact(self)
+		return
+	# Forward attack inputs to the combat handler
+	if _combat != null and (event.is_action("attack")):
+		_combat.handle_input(event)
 
 
 # ── Physics ───────────────────────────────────────────────────────────────────
 
 func _physics_process(delta: float) -> void:
 	if not _is_mine():
-		# Remote player: apply animation from the synced value.
-		var synced_state := net_anim as AnimState
-		if synced_state != _anim_state:
-			_enter_anim_state(synced_state)
+		# Remote player: apply synced animations.
+		_apply_remote_animations()
 		return
 
 	if state == State.BOARD_VIEW:
@@ -259,18 +349,22 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
+	# Tick combat handler
+	if _combat != null:
+		_combat.tick(delta)
+
 	var on_floor := is_on_floor()
 
 	if not on_floor:
 		_air_time += delta
 		velocity.y -= GRAVITY * delta
 
-	if Input.is_action_just_pressed("jump") and on_floor:
+	if Input.is_action_just_pressed("jump") and on_floor and not is_attacking:
 		velocity.y = JUMP_VELOCITY
 
-	var sprinting := Input.is_action_pressed("sprint")
-	var speed     := SPRINT_SPEED if sprinting else WALK_SPEED
-	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var sprinting  := Input.is_action_pressed("sprint")
+	var speed      := SPRINT_SPEED if sprinting else WALK_SPEED
+	var input_dir  := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 
 	var direction := Vector3.ZERO
 	if input_dir != Vector2.ZERO:
@@ -278,17 +372,18 @@ func _physics_process(delta: float) -> void:
 
 	var moving := direction != Vector3.ZERO
 
-	# Update animation state first — movement constraints depend on it.
 	_update_anim_state(moving, sprinting)
 
-	if not on_floor:
-		# Weak air control: player can nudge direction but cannot steer freely.
+	if is_attacking:
+		# Root the player during attacks (lock-on style)
+		velocity.x = 0.0
+		velocity.z = 0.0
+	elif not on_floor:
 		if direction != Vector3.ZERO:
 			var air_speed := speed * AIR_CONTROL
 			velocity.x = move_toward(velocity.x, direction.x * air_speed, 5.0 * delta)
 			velocity.z = move_toward(velocity.z, direction.z * air_speed, 5.0 * delta)
 	elif _anim_state == AnimState.WALK or _anim_state == AnimState.SPRINT:
-		# Full ground movement only while walk/sprint animation is active.
 		if direction != Vector3.ZERO:
 			velocity.x = direction.x * speed
 			velocity.z = direction.z * speed
@@ -298,12 +393,38 @@ func _physics_process(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, 0, speed)
 			velocity.z = move_toward(velocity.z, 0, speed)
 	else:
-		# On floor but not in a movement animation (idle, land, …): stop immediately.
 		velocity.x = 0.0
 		velocity.z = 0.0
 
 	net_anim = int(_anim_state)
+	# net_combat is written directly by CombatHandler (_player.net_combat = …)
 	move_and_slide()
+
+
+func _apply_remote_animations() -> void:
+	if net_combat > 0:
+		# Play the attack animation indicated by the host
+		if not is_attacking:
+			is_attacking = true
+			var key : String = _combat.COMBO_KEYS[net_combat - 1] if _combat != null \
+								else ""
+			if key != "" and _anim_player != null:
+				var d : Dictionary = _combat.ATTACKS[key] if _combat != null else {}
+				if not d.is_empty():
+					_anim_player.speed_scale = d["speed"]
+					if d["reverse"]:
+						_anim_player.play_backwards("Sword_Attack", 0.1)
+					else:
+						_anim_player.play("Sword_Attack", 0.1)
+	elif is_attacking:
+		is_attacking = false
+		if _anim_player:
+			_anim_player.speed_scale = 1.0
+		_current_anim = ""
+	else:
+		var synced_state := net_anim as AnimState
+		if synced_state != _anim_state:
+			_enter_anim_state(synced_state)
 
 
 # ── Interaction ray ───────────────────────────────────────────────────────────
