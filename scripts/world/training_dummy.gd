@@ -23,7 +23,7 @@ var _hurt_area : Area3D = null
 
 func _ready() -> void:
 	add_to_group("dummy")
-	_base_y = position.y + 1.6
+	_base_y = position.y + 1.2
 	_update_glow()
 	_setup_hurt_area()
 
@@ -69,9 +69,9 @@ func _apply_damage(amount: float) -> void:
 	health = maxf(0.0, health - amount)
 
 	if multiplayer.has_multiplayer_peer():
-		_net_hit.rpc(health)          # broadcast visuals + health to all peers
+		_net_hit.rpc(health, amount)  # broadcast visuals + health to all peers
 	else:
-		_show_hit(health)             # single-player: update locally
+		_show_hit(health, amount)     # single-player: update locally
 
 	if health <= 0.0:
 		if multiplayer.has_multiplayer_peer():
@@ -83,10 +83,12 @@ func _apply_damage(amount: float) -> void:
 
 # ── Visual helpers (run on every peer) ───────────────────────────────────────
 
-func _show_hit(new_health: float) -> void:
+func _show_hit(new_health: float, damage: float = 0.0) -> void:
 	health = new_health
 	_update_glow()
 	_flash_white()
+	if damage > 0.0:
+		_spawn_damage_number(damage)
 
 
 func _show_destroy() -> void:
@@ -119,8 +121,8 @@ func _show_respawn() -> void:
 # ── Multiplayer broadcasts ────────────────────────────────────────────────────
 
 @rpc("authority", "call_local", "unreliable_ordered")
-func _net_hit(new_health: float) -> void:
-	_show_hit(new_health)
+func _net_hit(new_health: float, damage: float = 0.0) -> void:
+	_show_hit(new_health, damage)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -142,6 +144,30 @@ func _do_respawn() -> void:
 		_net_respawn.rpc()
 	else:
 		_show_respawn()
+
+
+# ── Damage numbers ───────────────────────────────────────────────────────────
+
+func _spawn_damage_number(damage: float) -> void:
+	var label := Label3D.new()
+	label.text = str(int(damage))
+	label.font_size = 72
+	label.outline_size = 8
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.modulate = Color(1.0, 0.25, 0.1)
+	# Slight random horizontal offset so numbers don't stack perfectly
+	var offset := Vector3(randf_range(-0.3, 0.3), 1.8, randf_range(-0.15, 0.15))
+	get_tree().root.add_child(label)
+	label.global_position = global_position + offset
+
+	var tween := label.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(label, "global_position:y", label.global_position.y + 1.2, 0.75)\
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(label, "modulate:a", 0.0, 0.75)\
+		.set_delay(0.25)
+	tween.chain().tween_callback(label.queue_free)
 
 
 # ── Glow / flash ─────────────────────────────────────────────────────────────

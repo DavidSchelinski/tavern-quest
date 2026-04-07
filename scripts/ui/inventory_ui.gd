@@ -2,33 +2,44 @@ extends CanvasLayer
 
 signal closed
 
-const COLS       := 6
-const ROWS       := 5
-const SLOT_SIZE  := 72
-const SLOT_GAP   := 6
-const ICON_SIZE  := 60
-const PANEL_PAD  := 16
+# ── Layout constants ──────────────────────────────────────────────────────────
+const COLS      := 6
+const ROWS      := 5
+const SLOT_SIZE := 72
+const SLOT_GAP  := 6
+const ICON_SIZE := 60
+const PAD       := 16
+const TAB_H     := 38   # height of the tab strip
 
+# ── Shared ────────────────────────────────────────────────────────────────────
 var _root        : Control
-var _grid        : Control
-var _slot_panels : Array[Panel] = []
-var _held_data   : Variant = null   # { "item": ItemData, "count": int } or null
-var _held_icon   : TextureRect = null
-var _held_label  : Label = null
+var _tab_btns    : Array[Button] = []
+var _pages       : Array[Control] = []
+var _current_tab : int = 0
 var _player_ref  : Node3D = null
 
-# Context menu state.
+# ── Inventory page ────────────────────────────────────────────────────────────
+var _grid        : Control
+var _slot_panels : Array[Panel] = []
+var _held_data   : Variant = null
+var _held_icon   : TextureRect = null
+var _held_label  : Label = null
+
 var _ctx_menu    : Panel = null
 var _ctx_slot    : int   = -1
 
-# Split dialog state.
-var _split_panel  : Panel  = null
+var _split_panel  : Panel   = null
 var _split_slider : HSlider = null
-var _split_label  : Label  = null
-var _split_slot   : int    = -1
+var _split_label  : Label   = null
+var _split_slot   : int     = -1
 
-# Placeholder textures generated at runtime (colored squares).
 var _placeholder_cache : Dictionary = {}
+
+# ── Character page ────────────────────────────────────────────────────────────
+var _stat_points_label : Label     = null
+var _stat_val_labels   : Dictionary = {}   # stat → Label
+var _stat_plus_btns    : Dictionary = {}   # stat → Button
+var _derived_labels    : Dictionary = {}   # key  → Label
 
 
 func _ready() -> void:
@@ -36,6 +47,7 @@ func _ready() -> void:
 	_build_ui()
 	visible = false
 	InventoryManager.slot_changed.connect(_on_slot_changed)
+	CharacterStats.stats_changed.connect(_on_stats_changed)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -47,12 +59,13 @@ func open(player: Node3D) -> void:
 	visible = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_refresh_all_slots()
+	_refresh_character_page()
+	_switch_tab(_current_tab)
 
 
 func close() -> void:
 	_close_context_menu()
 	_close_split_dialog()
-	# If holding an item, put it back.
 	if _held_data != null:
 		var leftover := InventoryManager.add_item(_held_data["item"], _held_data["count"])
 		if leftover > 0:
@@ -64,7 +77,7 @@ func close() -> void:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  BUILD UI
+#  BUILD UI – root + outer panel + tabs
 # ──────────────────────────────────────────────────────────────────────────────
 
 func _build_ui() -> void:
@@ -73,7 +86,7 @@ func _build_ui() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_root)
 
-	# Semi-transparent backdrop — click here to close or drop items.
+	# Semi-transparent backdrop.
 	var bg := ColorRect.new()
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.color = Color(0, 0, 0, 0.35)
@@ -81,48 +94,62 @@ func _build_ui() -> void:
 	bg.gui_input.connect(_on_bg_input)
 	_root.add_child(bg)
 
-	# Centered panel.
-	var grid_w : float = COLS * (SLOT_SIZE + SLOT_GAP) - SLOT_GAP
-	var grid_h : float = ROWS * (SLOT_SIZE + SLOT_GAP) - SLOT_GAP
-	var panel_w : float = grid_w + PANEL_PAD * 2
-	var panel_h : float = grid_h + PANEL_PAD * 2 + 40  # extra for title
+	# Panel dimensions.
+	var grid_w : float = COLS * (SLOT_SIZE + SLOT_GAP) - SLOT_GAP   # 462
+	var grid_h : float = ROWS * (SLOT_SIZE + SLOT_GAP) - SLOT_GAP   # 384
+	var panel_w : float = grid_w + PAD * 2                            # 494
+	var content_h : float = grid_h + PAD * 2 + 40                    # 456  (same as before)
+	var panel_h : float = content_h + TAB_H                          # 494
 
+	# Outer panel.
 	var panel := Panel.new()
 	panel.custom_minimum_size = Vector2(panel_w, panel_h)
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-panel_w / 2.0, -panel_h / 2.0)
-	panel.size = Vector2(panel_w, panel_h)
+	panel.position  = Vector2(-panel_w / 2.0, -panel_h / 2.0)
+	panel.size      = Vector2(panel_w, panel_h)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	var outer_style := _make_panel_style(Color(0.10, 0.08, 0.07, 0.96))
+	panel.add_theme_stylebox_override("panel", outer_style)
 	_root.add_child(panel)
 
-	# Title.
-	var title := Label.new()
-	title.text = "Inventory"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.position = Vector2(0, 8)
-	title.size = Vector2(panel_w, 30)
-	title.add_theme_font_size_override("font_size", 20)
-	panel.add_child(title)
+	# Tab strip (inside the outer panel, at the top).
+	_build_tab_strip(panel, panel_w)
 
-	# Grid container.
-	_grid = Control.new()
-	_grid.position = Vector2(PANEL_PAD, 40)
-	_grid.size = Vector2(grid_w, grid_h)
-	panel.add_child(_grid)
+	# Thin separator line below tab strip.
+	var line := ColorRect.new()
+	line.position = Vector2(0, TAB_H)
+	line.size     = Vector2(panel_w, 1)
+	line.color    = Color(0.55, 0.45, 0.30, 0.5)
+	panel.add_child(line)
 
-	for i in InventoryManager.SLOT_COUNT:
-		var slot := _create_slot(i)
-		_grid.add_child(slot)
-		_slot_panels.append(slot)
+	# Content area (below tabs).
+	var content := Control.new()
+	content.position = Vector2(0, TAB_H + 1)
+	content.size     = Vector2(panel_w, content_h)
+	panel.add_child(content)
 
-	# Floating held-item icon (follows mouse).
+	# Page 0 – Inventory.
+	var inv_page := Control.new()
+	inv_page.size = Vector2(panel_w, content_h)
+	content.add_child(inv_page)
+	_pages.append(inv_page)
+	_build_inventory_page(inv_page, panel_w, grid_w, grid_h)
+
+	# Page 1 – Character.
+	var char_page := Control.new()
+	char_page.size = Vector2(panel_w, content_h)
+	content.add_child(char_page)
+	_pages.append(char_page)
+	_build_character_page(char_page, panel_w, content_h)
+
+	# Floating held-item icon (above everything, on _root).
 	_held_icon = TextureRect.new()
 	_held_icon.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE)
-	_held_icon.size = Vector2(ICON_SIZE, ICON_SIZE)
-	_held_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_held_icon.size         = Vector2(ICON_SIZE, ICON_SIZE)
+	_held_icon.expand_mode  = TextureRect.EXPAND_IGNORE_SIZE
 	_held_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_held_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_held_icon.visible = false
+	_held_icon.visible      = false
 	_root.add_child(_held_icon)
 
 	_held_label = Label.new()
@@ -135,6 +162,80 @@ func _build_ui() -> void:
 	_root.add_child(_held_label)
 
 
+# ── Tab strip ──────────────────────────────────────────────────────────────────
+
+func _build_tab_strip(parent: Control, panel_w: float) -> void:
+	var labels := ["Inventar", "Charakter"]
+	var tab_w  := panel_w / labels.size()
+
+	for i in labels.size():
+		var btn := Button.new()
+		btn.text     = labels[i]
+		btn.position = Vector2(i * tab_w, 0)
+		btn.size     = Vector2(tab_w, TAB_H)
+		btn.add_theme_font_size_override("font_size", 15)
+		btn.flat = true
+		var idx := i   # capture for closure
+		btn.pressed.connect(func() -> void: _switch_tab(idx))
+		parent.add_child(btn)
+		_tab_btns.append(btn)
+
+
+func _switch_tab(index: int) -> void:
+	_current_tab = index
+	for i in _pages.size():
+		_pages[i].visible = (i == index)
+	_apply_tab_styles()
+	if index == 1:
+		_refresh_character_page()
+
+
+func _apply_tab_styles() -> void:
+	for i in _tab_btns.size():
+		var btn    := _tab_btns[i]
+		var active := (i == _current_tab)
+
+		var s := StyleBoxFlat.new()
+		s.bg_color = Color(0.20, 0.16, 0.12, 1.0) if active else Color(0.10, 0.08, 0.07, 0.0)
+		s.set_border_width_all(0)
+		s.border_width_bottom = 2 if active else 0
+		s.border_color = Color(0.75, 0.60, 0.35, 1.0)
+		s.set_corner_radius_all(0)
+		btn.add_theme_stylebox_override("normal",  s)
+		btn.add_theme_stylebox_override("hover",   s)
+		btn.add_theme_stylebox_override("pressed", s)
+		btn.add_theme_stylebox_override("focus",   s)
+
+		var col := Color(0.95, 0.78, 0.45, 1.0) if active else Color(0.58, 0.54, 0.48, 1.0)
+		btn.add_theme_color_override("font_color",       col)
+		btn.add_theme_color_override("font_hover_color", Color(1.0, 0.88, 0.60, 1.0))
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  BUILD – INVENTORY PAGE
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _build_inventory_page(page: Control, panel_w: float, grid_w: float, grid_h: float) -> void:
+	var title := Label.new()
+	title.text = "Inventar"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.position = Vector2(0, 8)
+	title.size     = Vector2(panel_w, 28)
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(0.90, 0.75, 0.45, 1.0))
+	page.add_child(title)
+
+	_grid = Control.new()
+	_grid.position = Vector2(PAD, 40)
+	_grid.size     = Vector2(grid_w, grid_h)
+	page.add_child(_grid)
+
+	for i in InventoryManager.SLOT_COUNT:
+		var slot := _create_slot(i)
+		_grid.add_child(slot)
+		_slot_panels.append(slot)
+
+
 func _create_slot(index: int) -> Panel:
 	var col := index % COLS
 	var row := index / COLS
@@ -144,37 +245,252 @@ func _create_slot(index: int) -> Panel:
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.gui_input.connect(_on_slot_input.bind(index))
 
-	# Slot background style.
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.12, 0.10, 0.85)
+	style.bg_color     = Color(0.15, 0.12, 0.10, 0.85)
 	style.border_color = Color(0.55, 0.45, 0.30, 1.0)
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(4)
 	panel.add_theme_stylebox_override("panel", style)
 
-	# Icon.
 	var icon := TextureRect.new()
-	icon.name = "Icon"
-	icon.position = Vector2((SLOT_SIZE - ICON_SIZE) / 2.0, (SLOT_SIZE - ICON_SIZE) / 2.0 - 4)
-	icon.size = Vector2(ICON_SIZE, ICON_SIZE)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.name         = "Icon"
+	icon.position     = Vector2((SLOT_SIZE - ICON_SIZE) / 2.0, (SLOT_SIZE - ICON_SIZE) / 2.0 - 4)
+	icon.size         = Vector2(ICON_SIZE, ICON_SIZE)
+	icon.expand_mode  = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(icon)
 
-	# Count label.
 	var lbl := Label.new()
-	lbl.name = "Count"
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	lbl.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	lbl.name                       = "Count"
+	lbl.horizontal_alignment       = HORIZONTAL_ALIGNMENT_RIGHT
+	lbl.vertical_alignment         = VERTICAL_ALIGNMENT_BOTTOM
 	lbl.position = Vector2(4, 4)
-	lbl.size = Vector2(SLOT_SIZE - 8, SLOT_SIZE - 8)
+	lbl.size     = Vector2(SLOT_SIZE - 8, SLOT_SIZE - 8)
 	lbl.add_theme_font_size_override("font_size", 14)
 	lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.9))
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(lbl)
 
 	return panel
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  BUILD – CHARACTER PAGE
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _build_character_page(page: Control, panel_w: float, _page_h: float) -> void:
+	var p  := 10.0   # inner padding
+	var y  := p
+
+	# ── Header: title + stat points ──
+	var title := Label.new()
+	title.text     = "Charakter"
+	title.position = Vector2(p, y)
+	title.size     = Vector2(220, 28)
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(0.90, 0.75, 0.45, 1.0))
+	page.add_child(title)
+
+	_stat_points_label = Label.new()
+	_stat_points_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_stat_points_label.position = Vector2(panel_w * 0.45, y)
+	_stat_points_label.size     = Vector2(panel_w * 0.5 - p, 28)
+	_stat_points_label.add_theme_font_size_override("font_size", 14)
+	_stat_points_label.add_theme_color_override("font_color", Color(0.45, 0.88, 0.45, 1.0))
+	page.add_child(_stat_points_label)
+	y += 34
+
+	# ── Separator ──
+	page.add_child(_make_hsep(p, y, panel_w - p * 2))
+	y += 10
+
+	# ── Section label ──
+	page.add_child(_make_section_label("Primäre Attribute", p, y, panel_w - p * 2))
+	y += 24
+
+	# ── Stat rows ──
+	var row_h := 38.0
+	for stat in CharacterStats.STAT_NAMES:
+		_build_stat_row(page, stat, p, y, panel_w - p * 2, row_h)
+		y += row_h + 4
+
+	y += 4
+
+	# ── Separator ──
+	page.add_child(_make_hsep(p, y, panel_w - p * 2))
+	y += 10
+
+	# ── Derived stats ──
+	page.add_child(_make_section_label("Abgeleitete Werte", p, y, panel_w - p * 2))
+	y += 24
+
+	var derived_defs : Array[Array] = [
+		["Max-HP",                  "max_hp"],
+		["Schadensbonus",           "dmg_mult"],
+		["Schadensreduktion",       "dmg_red"],
+		["Bewegungstempo",          "speed"],
+		["Angriffsgeschwindigkeit", "atk_speed"],
+	]
+	for def in derived_defs:
+		_build_derived_row(page, def[0], def[1], p, y, panel_w - p * 2)
+		y += 24
+
+
+func _build_stat_row(parent: Control, stat: String,
+					  x: float, y: float, w: float, h: float) -> void:
+	# Background panel.
+	var bg := Panel.new()
+	bg.position = Vector2(x, y)
+	bg.size     = Vector2(w, h)
+	var bg_style := StyleBoxFlat.new()
+	bg_style.bg_color     = Color(0.15, 0.12, 0.10, 0.60)
+	bg_style.border_color = Color(0.40, 0.32, 0.22, 0.50)
+	bg_style.set_border_width_all(1)
+	bg_style.set_corner_radius_all(3)
+	bg.add_theme_stylebox_override("panel", bg_style)
+	parent.add_child(bg)
+
+	# Stat name.
+	var name_lbl := Label.new()
+	name_lbl.text               = CharacterStats.STAT_LABELS[stat]
+	name_lbl.position           = Vector2(8, 0)
+	name_lbl.size               = Vector2(155, h)
+	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_lbl.add_theme_font_size_override("font_size", 14)
+	name_lbl.add_theme_color_override("font_color", Color(0.88, 0.82, 0.72, 1.0))
+	bg.add_child(name_lbl)
+
+	# Current value.
+	var val_lbl := Label.new()
+	val_lbl.position              = Vector2(165, 0)
+	val_lbl.size                  = Vector2(38, h)
+	val_lbl.horizontal_alignment  = HORIZONTAL_ALIGNMENT_CENTER
+	val_lbl.vertical_alignment    = VERTICAL_ALIGNMENT_CENTER
+	val_lbl.add_theme_font_size_override("font_size", 16)
+	bg.add_child(val_lbl)
+	_stat_val_labels[stat] = val_lbl
+
+	# "+" button.
+	var btn := Button.new()
+	btn.text     = "+"
+	btn.position = Vector2(207, (h - 26) / 2.0)
+	btn.size     = Vector2(26, 26)
+	btn.add_theme_font_size_override("font_size", 17)
+	btn.pressed.connect(func() -> void: _on_spend_point(stat))
+	bg.add_child(btn)
+	_stat_plus_btns[stat] = btn
+
+	# Description (clipped so it never overflows).
+	var desc := Label.new()
+	desc.text               = CharacterStats.STAT_DESC[stat]
+	desc.position           = Vector2(240, 0)
+	desc.size               = Vector2(w - 248, h)
+	desc.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	desc.clip_text          = true
+	desc.add_theme_font_size_override("font_size", 12)
+	desc.add_theme_color_override("font_color", Color(0.55, 0.52, 0.47, 1.0))
+	bg.add_child(desc)
+
+
+func _build_derived_row(parent: Control, label: String, key: String,
+						  x: float, y: float, w: float) -> void:
+	var lbl := Label.new()
+	lbl.text               = label + ":"
+	lbl.position           = Vector2(x + 8, y)
+	lbl.size               = Vector2(200, 22)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 13)
+	lbl.add_theme_color_override("font_color", Color(0.68, 0.62, 0.54, 1.0))
+	parent.add_child(lbl)
+
+	var val := Label.new()
+	val.position           = Vector2(x + 216, y)
+	val.size               = Vector2(w - 224, 22)
+	val.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	val.add_theme_font_size_override("font_size", 13)
+	val.add_theme_color_override("font_color", Color(0.90, 0.82, 0.50, 1.0))
+	parent.add_child(val)
+	_derived_labels[key] = val
+
+
+# ── Helper builders ───────────────────────────────────────────────────────────
+
+func _make_hsep(x: float, y: float, w: float) -> ColorRect:
+	var r := ColorRect.new()
+	r.position = Vector2(x, y)
+	r.size     = Vector2(w, 1)
+	r.color    = Color(0.45, 0.38, 0.28, 0.50)
+	return r
+
+
+func _make_section_label(text: String, x: float, y: float, w: float) -> Label:
+	var lbl := Label.new()
+	lbl.text     = text
+	lbl.position = Vector2(x, y)
+	lbl.size     = Vector2(w, 20)
+	lbl.add_theme_font_size_override("font_size", 12)
+	lbl.add_theme_color_override("font_color", Color(0.58, 0.54, 0.47, 1.0))
+	return lbl
+
+
+func _make_panel_style(bg: Color) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color     = bg
+	s.border_color = Color(0.55, 0.45, 0.30, 1.0)
+	s.set_border_width_all(2)
+	s.set_corner_radius_all(6)
+	return s
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  CHARACTER PAGE – REFRESH
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _on_stats_changed() -> void:
+	if visible and _current_tab == 1:
+		_refresh_character_page()
+
+
+func _on_spend_point(stat: String) -> void:
+	CharacterStats.spend_point(stat)
+
+
+func _refresh_character_page() -> void:
+	if _stat_points_label == null:
+		return
+
+	var pts := CharacterStats.stat_points
+	if pts > 0:
+		_stat_points_label.text = "✦ %d Statpunkt%s verfügbar" % [pts, "e" if pts != 1 else ""]
+		_stat_points_label.add_theme_color_override("font_color", Color(0.45, 0.92, 0.45, 1.0))
+	else:
+		_stat_points_label.text = "Keine Statpunkte verfügbar"
+		_stat_points_label.add_theme_color_override("font_color", Color(0.50, 0.50, 0.50, 1.0))
+
+	for stat in CharacterStats.STAT_NAMES:
+		var val  : int = CharacterStats.stats[stat]
+		var lbl  : Label  = _stat_val_labels[stat]
+		var btn  : Button = _stat_plus_btns[stat]
+
+		lbl.text = str(val)
+		var col := Color(0.95, 0.75, 0.28, 1.0) if val > 1 else Color(0.82, 0.82, 0.82, 1.0)
+		lbl.add_theme_color_override("font_color", col)
+
+		btn.disabled = (pts <= 0)
+
+	# Derived values.
+	var dmg_pct := int((CharacterStats.get_damage_multiplier()      - 1.0) * 100.0)
+	var spd_pct := int((CharacterStats.get_speed_multiplier()       - 1.0) * 100.0)
+	var atk_pct := int((CharacterStats.get_attack_speed_multiplier()- 1.0) * 100.0)
+	var red_pct := int(CharacterStats.get_damage_reduction()               * 100.0)
+	var max_hp  := CharacterStats.get_max_hp()
+
+	_derived_labels["max_hp"  ].text = "%d HP" % max_hp
+	_derived_labels["dmg_mult"].text = ("+%d %%" % dmg_pct) if dmg_pct > 0 else "–"
+	_derived_labels["dmg_red" ].text = ("-%d %%" % red_pct) if red_pct > 0 else "–"
+	_derived_labels["speed"   ].text = ("+%d %%" % spd_pct) if spd_pct > 0 else "–"
+	_derived_labels["atk_speed"].text = ("+%d %%" % atk_pct) if atk_pct > 0 else "–"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -196,11 +512,11 @@ func _refresh_slot(index: int) -> void:
 
 	if data == null:
 		icon.texture = null
-		lbl.text = ""
+		lbl.text     = ""
 	else:
 		var item : ItemData = data["item"]
 		icon.texture = _get_icon(item)
-		lbl.text = str(data["count"]) if data["count"] > 1 else ""
+		lbl.text     = str(data["count"]) if data["count"] > 1 else ""
 
 
 func _on_slot_changed(index: int) -> void:
@@ -208,7 +524,6 @@ func _on_slot_changed(index: int) -> void:
 		_refresh_slot(index)
 
 
-## Returns the item icon, or generates a colored placeholder if none is set.
 func _get_icon(item: ItemData) -> Texture2D:
 	if item.icon != null:
 		return item.icon
@@ -216,7 +531,6 @@ func _get_icon(item: ItemData) -> Texture2D:
 		return _placeholder_cache[item.id]
 	var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
 	img.fill(item.mesh_color)
-	# Draw a darker border.
 	var border_col := item.mesh_color.darkened(0.4)
 	for x in 64:
 		for y in 64:
@@ -238,7 +552,6 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		close()
 		return
-	# Move held icon with mouse.
 	if _held_data != null and event is InputEventMouseMotion:
 		_update_held_position(event.position)
 
@@ -261,24 +574,22 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 	_close_split_dialog()
 
 	if _held_data == null:
-		# Pick up from slot.
 		var data = InventoryManager.take_slot(index)
 		if data != null:
 			_held_data = data
 			_held_icon.texture = _get_icon(data["item"])
 			_held_icon.visible = true
-			_held_label.text = str(data["count"]) if data["count"] > 1 else ""
+			_held_label.text   = str(data["count"]) if data["count"] > 1 else ""
 			_held_label.visible = data["count"] > 1
 			_update_held_position(event.global_position)
 	else:
-		# Place into slot (swap if occupied).
 		var returned = InventoryManager.put_slot(index, _held_data)
 		if returned == null:
 			_clear_held()
 		else:
 			_held_data = returned
-			_held_icon.texture = _get_icon(returned["item"])
-			_held_label.text = str(returned["count"]) if returned["count"] > 1 else ""
+			_held_icon.texture  = _get_icon(returned["item"])
+			_held_label.text    = str(returned["count"]) if returned["count"] > 1 else ""
 			_held_label.visible = returned["count"] > 1
 
 
@@ -295,39 +606,38 @@ func _on_bg_input(event: InputEvent) -> void:
 
 
 func _update_held_position(pos: Vector2) -> void:
-	_held_icon.position = pos - Vector2(ICON_SIZE / 2.0, ICON_SIZE / 2.0)
+	_held_icon.position  = pos - Vector2(ICON_SIZE / 2.0, ICON_SIZE / 2.0)
 	_held_label.position = pos + Vector2(-ICON_SIZE / 2.0, ICON_SIZE / 2.0 - 4)
 
 
 func _clear_held() -> void:
-	_held_data = null
-	_held_icon.visible = false
-	_held_icon.texture = null
+	_held_data          = null
+	_held_icon.visible  = false
+	_held_icon.texture  = null
 	_held_label.visible = false
-	_held_label.text = ""
+	_held_label.text    = ""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CONTEXT MENU (right-click)
+#  CONTEXT MENU
 # ──────────────────────────────────────────────────────────────────────────────
 
 func _open_context_menu(slot_index: int, pos: Vector2) -> void:
 	var data = InventoryManager.get_slot(slot_index)
 	if data == null:
 		return
-
 	_close_context_menu()
 	_ctx_slot = slot_index
 
-	var item : ItemData = data["item"]
-	var count : int = data["count"]
+	var item  : ItemData = data["item"]
+	var count : int      = data["count"]
 
 	_ctx_menu = Panel.new()
 	_ctx_menu.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_ctx_menu)
 
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.10, 0.08, 0.95)
+	style.bg_color     = Color(0.12, 0.10, 0.08, 0.95)
 	style.border_color = Color(0.55, 0.45, 0.30, 1.0)
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(4)
@@ -338,7 +648,6 @@ func _open_context_menu(slot_index: int, pos: Vector2) -> void:
 	col.add_theme_constant_override("separation", 4)
 	_ctx_menu.add_child(col)
 
-	# "Split Stack" — only if stackable and count > 1.
 	if item.stackable and count > 1:
 		var split_btn := Button.new()
 		split_btn.text = "Split Stack"
@@ -349,7 +658,6 @@ func _open_context_menu(slot_index: int, pos: Vector2) -> void:
 		)
 		col.add_child(split_btn)
 
-	# "Drop Stack".
 	var drop_btn := Button.new()
 	drop_btn.text = "Drop Stack" if count > 1 else "Drop"
 	drop_btn.custom_minimum_size = Vector2(120, 32)
@@ -361,14 +669,12 @@ func _open_context_menu(slot_index: int, pos: Vector2) -> void:
 	)
 	col.add_child(drop_btn)
 
-	# Size the panel to fit its contents.
 	var btn_count := col.get_child_count()
-	var menu_w := 120.0 + 12.0
-	var menu_h : float = btn_count * 36.0 + 12.0
+	var menu_w    := 120.0 + 12.0
+	var menu_h    : float = btn_count * 36.0 + 12.0
 	_ctx_menu.size = Vector2(menu_w, menu_h)
 
-	# Position near the click, clamped to viewport.
-	var vp_size := get_viewport().get_visible_rect().size
+	var vp_size  := get_viewport().get_visible_rect().size
 	var menu_pos := pos + Vector2(4, 4)
 	menu_pos.x = minf(menu_pos.x, vp_size.x - menu_w)
 	menu_pos.y = minf(menu_pos.y, vp_size.y - menu_h)
@@ -393,7 +699,6 @@ func _open_split_dialog(slot_index: int, pos: Vector2) -> void:
 	var count : int = data["count"]
 	if count < 2:
 		return
-
 	_close_split_dialog()
 	_split_slot = slot_index
 
@@ -402,7 +707,7 @@ func _open_split_dialog(slot_index: int, pos: Vector2) -> void:
 	_root.add_child(_split_panel)
 
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.10, 0.08, 0.95)
+	style.bg_color     = Color(0.12, 0.10, 0.08, 0.95)
 	style.border_color = Color(0.55, 0.45, 0.30, 1.0)
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(4)
@@ -427,8 +732,8 @@ func _open_split_dialog(slot_index: int, pos: Vector2) -> void:
 	_split_slider = HSlider.new()
 	_split_slider.min_value = 1
 	_split_slider.max_value = count - 1
-	_split_slider.step = 1
-	_split_slider.value = half
+	_split_slider.step      = 1
+	_split_slider.value     = half
 	_split_slider.custom_minimum_size = Vector2(140, 20)
 	_split_slider.value_changed.connect(func(v: float) -> void:
 		_split_label.text = "Take: %d / %d" % [int(v), count]
@@ -454,9 +759,7 @@ func _open_split_dialog(slot_index: int, pos: Vector2) -> void:
 	btn_row.add_child(cancel_btn)
 
 	_split_panel.size = Vector2(170, 120)
-
-	# Position near the context menu click.
-	var vp_size := get_viewport().get_visible_rect().size
+	var vp_size   := get_viewport().get_visible_rect().size
 	var panel_pos := pos + Vector2(4, 4)
 	panel_pos.x = minf(panel_pos.x, vp_size.x - 170.0)
 	panel_pos.y = minf(panel_pos.y, vp_size.y - 120.0)
@@ -468,21 +771,18 @@ func _do_split(slot_index: int, take_count: int) -> void:
 	if data == null:
 		_close_split_dialog()
 		return
+	var item         : ItemData = data["item"]
+	var total        : int      = data["count"]
+	var split_amount : int      = clampi(take_count, 1, total - 1)
 
-	var item : ItemData = data["item"]
-	var total : int = data["count"]
-	var split_amount : int = clampi(take_count, 1, total - 1)
-
-	# Reduce the source slot.
 	data["count"] = total - split_amount
 	InventoryManager.slot_changed.emit(slot_index)
 	InventoryManager.inventory_changed.emit()
 
-	# Pick up the split portion on the cursor.
-	_held_data = { "item": item, "count": split_amount }
-	_held_icon.texture = _get_icon(item)
-	_held_icon.visible = true
-	_held_label.text = str(split_amount) if split_amount > 1 else ""
+	_held_data          = { "item": item, "count": split_amount }
+	_held_icon.texture  = _get_icon(item)
+	_held_icon.visible  = true
+	_held_label.text    = str(split_amount) if split_amount > 1 else ""
 	_held_label.visible = split_amount > 1
 
 	_close_split_dialog()
@@ -491,10 +791,10 @@ func _do_split(slot_index: int, take_count: int) -> void:
 func _close_split_dialog() -> void:
 	if _split_panel != null:
 		_split_panel.queue_free()
-		_split_panel = null
+		_split_panel  = null
 		_split_slider = null
-		_split_label = null
-		_split_slot = -1
+		_split_label  = null
+		_split_slot   = -1
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -511,8 +811,7 @@ func _drop_to_world(item: ItemData, count: int) -> void:
 	for i in count:
 		var inst := scene.instantiate()
 		inst.item_data = item
-		# Drop 2m in front of the player, slightly randomised.
-		var fwd := -_player_ref.global_transform.basis.z
+		var fwd    := -_player_ref.global_transform.basis.z
 		var offset := fwd * 2.0 + Vector3(randf_range(-0.3, 0.3), 0.5, randf_range(-0.3, 0.3))
 		inst.global_position = _player_ref.global_position + offset
 		_player_ref.get_parent().add_child(inst)

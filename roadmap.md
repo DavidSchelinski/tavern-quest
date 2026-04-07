@@ -2,6 +2,10 @@
   TAVERN QUEST – ROADMAP
 ================================================================================
 
+LEGENDE
+-------
+  [x] Fertig          [~] Teilweise fertig          [ ] Offen
+
 VISION
 ------
 Ein kooperatives Multiplayer-RPG in dem Spieler gemeinsam oder alleine Quests
@@ -10,26 +14,28 @@ Treffpunkt. Ein Spieler hostet die Welt – alle anderen verbinden sich zu ihm.
 
 
 ================================================================================
-  PHASE 1 – FUNDAMENT (laufend)
+  PHASE 1 – FUNDAMENT                                          [weitgehend fertig]
 ================================================================================
 
 [x] Spieler-Bewegung (Walk, Sprint, Jump mit Animationen)
 [x] Third-Person-Kamera mit SpringArm
 [x] Interaktionssystem (Raycast, Interactable-Gruppe)
-[x] Quest-Board (Grundstruktur)
+[x] Quest-Board (Grundstruktur – Szene + Bereich vorhanden)
 [x] Taverne (Szene, Barkeeper-NPC)
 [x] Animationsübergänge (Blending)
 [x] Bewegungslogik gekoppelt an Animationszustand
+[x] Hauptmenü (Spiel starten, Hosten, Beitreten, Beenden)
+[x] Grundlegendes UI-Framework (Game-Menü, Dialog-UI, Inventory-UI, Combo-HUD)
+[x] Lokalisierung (LocaleManager)
+[x] Voice-Over System
 
 [ ] Spieler-Charakterauswahl / Name vergeben
-[ ] Grundlegendes UI-Framework (HUD, Menü-Fenster, Dialoge)
-[ ] Hauptmenü (Spiel starten, Hosten, Beitreten, Beenden)
 [ ] Einstellungen (Lautstärke, Grafik, Steuerung)
 [ ] Speichersystem (Spielerdaten lokal persistieren)
 
 
 ================================================================================
-  PHASE 2 – CHARAKTERSYSTEM
+  PHASE 2 – CHARAKTERSYSTEM                                            [offen]
 ================================================================================
 
 CHARAKTER-BEWERTUNG (Onboarding)
@@ -57,7 +63,7 @@ RANG-SYSTEM
   - Rang bestimmt welche Quests angenommen werden dürfen
   - Höherer Rang schaltet neue Gebiete, Ausrüstung und NPC-Rekruten frei
 
-[ ] Attribut-Datensstruktur (Resource-Klasse)
+[ ] Attribut-Datenstruktur (Resource-Klasse)
 [ ] Onboarding-Sequenz / Bewertungstest
 [ ] Rang-System mit XP-Kurve
 [ ] Charakter-UI (Stats-Übersicht, Rang-Anzeige)
@@ -65,7 +71,7 @@ RANG-SYSTEM
 
 
 ================================================================================
-  PHASE 3 – ABENTEUERGRUPPEN
+  PHASE 3 – ABENTEUERGRUPPEN                                           [offen]
 ================================================================================
 
 KONZEPT
@@ -85,7 +91,7 @@ SOLO-BEGLEITER
     Typen: Wolf, Bär, Adler, Golem usw.
   - Begleiter haben eigene KI, vereinfachtes Attributsystem und eigenen Rang
 
-[ ] Gruppen-Datensstruktur (Mitgliederliste, Rang-Check)
+[ ] Gruppen-Datenstruktur (Mitgliederliste, Rang-Check)
 [ ] Gruppen-UI (Übersicht, Einladen, Verlassen)
 [ ] NPC-Begleiter-System (Rekrutierung, KI, Basis-Kampf)
 [ ] Kreaturen-Zähmungssystem
@@ -93,7 +99,7 @@ SOLO-BEGLEITER
 
 
 ================================================================================
-  PHASE 4 – QUEST-SYSTEM
+  PHASE 4 – QUEST-SYSTEM                                               [offen]
 ================================================================================
 
 QUEST-TYPEN
@@ -133,7 +139,7 @@ QUEST-ABLAUF
 
 
 ================================================================================
-  PHASE 5 – MULTIPLAYER (Godot High-Level Multiplayer API)
+  PHASE 5 – MULTIPLAYER (Godot High-Level Multiplayer API)    [weitgehend fertig]
 ================================================================================
 
 ARCHITEKTUR
@@ -141,7 +147,7 @@ ARCHITEKTUR
   Ein Spieler übernimmt die Host-Rolle (listen-server):
     - Startet den Server lokal
     - Tritt selbst als Spieler bei
-    - Andere Spieler verbinden sich über IP:Port oder später Relay-Server
+    - Andere Spieler verbinden sich über IP:Port oder LAN-Discovery
 
   Keine dedizierte Server-Binärdatei notwendig für den Anfang.
   Optional später: Export als dedizierten headless Server.
@@ -160,23 +166,20 @@ NETZWERK-SCOPE
     - UI-Zustand
     - Eingabe
 
-LOBBY-FLOW
-  Hauptmenü
-    ├── Spiel hosten → Port eingeben → Welt laden → andere warten auf Join
-    └── Spiel beitreten → IP:Port eingeben → verbinden → Charakter laden
+[x] Netzwerk-Manager (host, join, close, Fehler-Signale)
+[x] LAN-Discovery (UDP-Broadcast + automatische Servererkennung)
+[x] Spieler-Spawning über Netzwerk (Multiplayer-Authority pro Spieler)
+[x] MultiplayerSynchronizer für Bewegung + Animationen (net_anim, net_combat)
+[x] RPC-System für Kampfaktionen (take_damage, _net_hit, _net_destroy, _net_respawn)
+[~] Verbindungsfehler-Handling (Signale vorhanden, kein UI-Feedback)
 
-[ ] Netzwerk-Manager (Singleton: starten, hosten, joinen, trennen)
-[ ] Spieler-Spawning über Netzwerk (jeder Spieler spawnt seinen Charakter)
-[ ] MultiplayerSynchronizer für Bewegung + Animation
-[ ] RPC-System für Aktionen (Quests annehmen, Gruppen bilden, Schaden)
 [ ] Lobby / Warteraum UI
 [ ] Chat-System
 [ ] Host-Migration (optional: wenn Host geht, neuer Host wird bestimmt)
-[ ] Verbindungsfehler-Handling (Timeout, Reconnect)
 
 
 ================================================================================
-  PHASE 6 – KAMPFSYSTEM
+  PHASE 6 – KAMPFSYSTEM                                      [in Arbeit]
 ================================================================================
 
 KONZEPT
@@ -184,7 +187,8 @@ KONZEPT
 
   Aktionen:
     - Leichtangriff (schnell, wenig Schaden)
-    - Schwereangriff (langsam, viel Schaden, unterbrechbar)
+    - Schwereangriff (langsam, viel Schaden)
+    - Kombo-System (bis zu 3er-Ketten, 14 Kombinationen)
     - Ausweichen / Rollen (Stamina-Kosten)
     - Blocken (Verteidigung + Stamina)
     - Spezialangriff (je nach Klasse/Attributverteilung)
@@ -192,18 +196,24 @@ KONZEPT
 
   Statuseffekte: Vergiftet, Betäubt, Geschwächt, Brennend, Gefroren usw.
 
-[ ] Hitbox / Hurtbox System
-[ ] Schaden-Formel (Angriff vs Verteidigung, Krit-Berechnung)
+[x] Hitbox / Hurtbox System (Area3D an Knochenanbindung, Polling + Signale)
+[x] Kombo-System (L/H-Eingaben, 14 Kombinationen, Kombo-Fenster-HUD)
+[x] Schaden-Zahlenpopups (Label3D, animiert über dem Ziel)
+[x] Trainings-Dummy (Ziel mit Gesundheit, Glow-Feedback, Respawn, Loot-Drop)
+[~] Schaden-Formel (Fixwerte pro Kombo vorhanden, noch keine Attribut-Integration)
+
 [ ] Stamina-System
 [ ] Gegner-KI (Basisklassen: Nah, Fern, Magie)
-[ ] Gegner-Ränge (F-S) mit skalierten Werten
+[ ] Gegner-Ränge (F–S) mit skalierten Werten
 [ ] Boss-Kämpfe (besondere Angriffsmuster)
 [ ] Statuseffekt-System
-[ ] Tod / Respawn-Logik (in Gruppe: andere können wiederbeleben)
+[ ] Spieler-Tod / Respawn-Logik (in Gruppe: andere können wiederbeleben)
+[ ] Ausweichen / Rollen
+[ ] Blocken
 
 
 ================================================================================
-  PHASE 7 – WELT & INHALTE
+  PHASE 7 – WELT & INHALTE                                    [in Arbeit]
 ================================================================================
 
 WELT-STRUKTUR
@@ -214,19 +224,20 @@ WELT-STRUKTUR
   - Ruinen        (B-A Rang)
   - Dämonengebiet (S Rang)
 
+[x] Tag-Nacht-Zyklus (beeinflusst Atmosphäre)
+[x] Inventar-System (ItemData Resource, Manager, UI)
+[~] Loot-System (PickableItem-Szene + 5 Item-Ressourcen vorhanden, kein Drop-Table)
+
 [ ] Welt-Streaming / Szenen-Wechsel zwischen Gebieten
 [ ] Karte / Minimap
-[ ] Tag-Nacht-Zyklus (beeinflusst Gegnertypen)
 [ ] Wetter-System (optional)
-[ ] Loot-System (Gegenstände, Seltenheitsstufen)
-[ ] Inventar-System
-[ ] Ausrüstungs-System (Waffe, Rüstung, Accessoire)
+[ ] Ausrüstungs-System (Waffe, Rüstung, Accessoire mit Attribut-Boni)
 [ ] Händler-NPCs in der Taverne
 [ ] Handgefertigte S-Quests (Story-Quests)
 
 
 ================================================================================
-  PHASE 8 – POLISH & RELEASE
+  PHASE 8 – POLISH & RELEASE                                           [offen]
 ================================================================================
 
 [ ] Sound-Design (Schritte, Kampf, Umgebung, Musik)
@@ -243,13 +254,13 @@ WELT-STRUKTUR
   PRIORISIERTE NÄCHSTE SCHRITTE
 ================================================================================
 
-  1. UI-Framework (HUD, Dialoge) – alles andere baut darauf auf
-  2. Charakter-Datensstruktur + Rang-System
-  3. Quest-System (Daten + Board)
-  4. Basis-Kampfsystem (ohne Netzwerk)
-  5. Multiplayer-Fundament (Hosten/Joinen, Spieler-Sync)
-  6. Gruppen-System über Netzwerk
-  7. Welt-Inhalte (Gebiete, Gegner, Quests befüllen)
+  1. Speichersystem + Charaktername         (Phase 1 abschließen)
+  2. Attribut-Datenstruktur + Rang-System   (Phase 2, Basis für alles weitere)
+  3. Stamina-System + Ausweichen/Blocken    (Phase 6 erweitern)
+  4. Quest-Datenstruktur + Board-UI         (Phase 4)
+  5. Gegner-KI (erste Feindtypen)           (Phase 6)
+  6. Lobby-UI + Chat                        (Phase 5 abschließen)
+  7. Welt-Inhalte (erste Gebiete, Gegner)   (Phase 7)
 
 
 ================================================================================

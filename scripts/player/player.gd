@@ -401,7 +401,8 @@ func _physics_process(delta: float) -> void:
 		velocity.y = JUMP_VELOCITY
 
 	var sprinting  := Input.is_action_pressed("sprint")
-	var speed      := SPRINT_SPEED if sprinting else WALK_SPEED
+	var speed      := (SPRINT_SPEED if sprinting else WALK_SPEED) \
+					  * CharacterStats.get_speed_multiplier()
 	var input_dir  := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 
 	var direction := Vector3.ZERO
@@ -413,9 +414,16 @@ func _physics_process(delta: float) -> void:
 	_update_anim_state(moving, sprinting)
 
 	if is_attacking:
-		# Root the player during attacks (lock-on style)
-		velocity.x = 0.0
-		velocity.z = 0.0
+		# Allow limited movement during attacks for dynamic feel (50% speed)
+		var atk_speed := speed * 0.5
+		if direction != Vector3.ZERO:
+			velocity.x = move_toward(velocity.x, direction.x * atk_speed, 10.0 * delta)
+			velocity.z = move_toward(velocity.z, direction.z * atk_speed, 10.0 * delta)
+			var target_angle := atan2(-direction.x, -direction.z)
+			pivot.rotation.y = rotate_toward(pivot.rotation.y, target_angle, ROT_SPEED * 0.5 * delta)
+		else:
+			velocity.x = move_toward(velocity.x, 0.0, 14.0 * delta)
+			velocity.z = move_toward(velocity.z, 0.0, 14.0 * delta)
 	elif not on_floor:
 		if direction != Vector3.ZERO:
 			var air_speed := speed * AIR_CONTROL

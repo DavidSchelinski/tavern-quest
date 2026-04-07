@@ -20,20 +20,20 @@ const COMBO_KEYS : Array[String] = [
 #   reverse : play animation backwards for a mirrored swing
 #   dmg     : base damage dealt
 const ATTACKS : Dictionary = {
-	"L":   { "speed": 1.4,  "reverse": false, "dmg": 10.0 },
-	"LL":  { "speed": 1.4,  "reverse": true,  "dmg": 12.0 },
-	"LLL": { "speed": 1.6,  "reverse": false, "dmg": 14.0 },
-	"H":   { "speed": 0.70, "reverse": false, "dmg": 22.0 },
-	"HH":  { "speed": 0.65, "reverse": true,  "dmg": 26.0 },
-	"HHH": { "speed": 0.55, "reverse": false, "dmg": 32.0 },
-	"LH":  { "speed": 0.90, "reverse": true,  "dmg": 18.0 },
-	"HL":  { "speed": 1.00, "reverse": false,  "dmg": 17.0 },
-	"LLH": { "speed": 0.75, "reverse": true,  "dmg": 24.0 },
-	"LHL": { "speed": 1.10, "reverse": false, "dmg": 22.0 },
-	"HLL": { "speed": 1.20, "reverse": true,  "dmg": 20.0 },
-	"HHL": { "speed": 0.90, "reverse": false, "dmg": 28.0 },
-	"HLH": { "speed": 0.80, "reverse": true,  "dmg": 27.0 },
-	"LHH": { "speed": 0.85, "reverse": false, "dmg": 26.0 },
+	"L":   { "speed": 1.8,  "reverse": false, "dmg": 10.0 },
+	"LL":  { "speed": 1.9,  "reverse": true,  "dmg": 12.0 },
+	"LLL": { "speed": 2.1,  "reverse": false, "dmg": 14.0 },
+	"H":   { "speed": 0.95, "reverse": false, "dmg": 22.0 },
+	"HH":  { "speed": 0.90, "reverse": true,  "dmg": 26.0 },
+	"HHH": { "speed": 0.80, "reverse": false, "dmg": 32.0 },
+	"LH":  { "speed": 1.15, "reverse": true,  "dmg": 18.0 },
+	"HL":  { "speed": 1.25, "reverse": false, "dmg": 17.0 },
+	"LLH": { "speed": 1.00, "reverse": true,  "dmg": 24.0 },
+	"LHL": { "speed": 1.40, "reverse": false, "dmg": 22.0 },
+	"HLL": { "speed": 1.50, "reverse": true,  "dmg": 20.0 },
+	"HHL": { "speed": 1.15, "reverse": false, "dmg": 28.0 },
+	"HLH": { "speed": 1.05, "reverse": true,  "dmg": 27.0 },
+	"LHH": { "speed": 1.10, "reverse": false, "dmg": 26.0 },
 }
 
 const ANIM_SWORD_ATTACK := "Sword_Attack"
@@ -185,22 +185,29 @@ func _play(d: Dictionary) -> void:
 	# Keep player._current_anim in sync so _play_anim can resume correctly afterwards
 	_player._current_anim = ANIM_SWORD_ATTACK
 
-	_anim.speed_scale = d["speed"]
+	# Apply Agility multiplier to animation speed.
+	var spd_mult := CharacterStats.get_attack_speed_multiplier()
+	_anim.speed_scale = d["speed"] * spd_mult
 	if d["reverse"]:
 		_anim.play_backwards(ANIM_SWORD_ATTACK, 0.1)
 	else:
 		_anim.play(ANIM_SWORD_ATTACK, 0.1)
 
-	# Arm hitbox at ~35% through the swing
+	# Arm hitbox at the contact point.
+	# Forward: contact at ~20% of playback  → arm at 0.15
+	# Reverse (play_backwards): animation plays from 100%→0%, so the contact
+	# (at ~20% of the original animation) is reached at ~80% of playback → arm at 0.65
 	var anim_length : float = _anim.get_animation(ANIM_SWORD_ATTACK).length
-	var delay : float = anim_length / (d["speed"] as float) * 0.35
+	var hit_fraction := 0.65 if d["reverse"] else 0.15
+	var delay : float = anim_length / (d["speed"] as float * spd_mult) * hit_fraction
 	get_tree().create_timer(delay).timeout.connect(func(): _arm_hitbox(d["dmg"]))
 
 
 func _arm_hitbox(dmg: float) -> void:
 	if _hitbox == null or not _player.is_attacking:
 		return
-	_hitbox.set_meta("dmg", dmg)
+	# Apply Strength multiplier to outgoing damage.
+	_hitbox.set_meta("dmg", dmg * CharacterStats.get_damage_multiplier())
 	_hitbox.monitoring = true
 	_hitbox_active = true
 	_hitbox_time   = 0.0
