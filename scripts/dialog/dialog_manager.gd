@@ -21,6 +21,7 @@ extends Node
 signal dialog_started(npc: Node3D)
 signal dialog_ended(npc: Node3D)
 signal node_displayed(speaker: String, text: String, choices: Array)
+signal quest_offered(quest: Dictionary)
 
 var _current_npc   : Node3D    = null
 var _current_data  : Dictionary = {}
@@ -81,6 +82,27 @@ func show_node(node_id: String) -> void:
 		})
 
 	node_displayed.emit(speaker, text, choices)
+
+	# Trigger quest offer if this node carries give_quest data.
+	var give_quest : Variant = node.get("give_quest", null)
+	if give_quest != null and give_quest is Dictionary:
+		var quest_id : String = (give_quest as Dictionary).get("title_key", "")
+		if not QuestManager.is_quest_active(quest_id) and not QuestManager.is_quest_completed(quest_id):
+			quest_offered.emit(give_quest as Dictionary)
+
+	# Handle quest turn-in: check inventory, remove item, complete quest.
+	# If the player lacks the required item, redirect to the fail node instead.
+	var turn_in : Variant = node.get("turn_in_quest", null)
+	if turn_in != null and turn_in is Dictionary:
+		var quest_id : String = (turn_in as Dictionary).get("quest_id", "")
+		var item_id  : String = (turn_in as Dictionary).get("item_id", "")
+		var fail_node : String = (turn_in as Dictionary).get("fail", "")
+		if QuestManager.is_quest_active(quest_id) and InventoryManager.has_item(item_id):
+			InventoryManager.remove_item_by_id(item_id, 1)
+			QuestManager.complete_quest(quest_id)
+		elif not fail_node.is_empty():
+			show_node(fail_node)
+			return
 
 	# If no choices, auto-advance on next interaction (or after a delay)
 	if choices.is_empty():

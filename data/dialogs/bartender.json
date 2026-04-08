@@ -8,6 +8,7 @@
 				{ "text": "BARTENDER_CHOICE_DRINK", "next": "drink" },
 				{ "text": "BARTENDER_CHOICE_RUMORS", "next": "rumors" },
 				{ "text": "BARTENDER_CHOICE_QUESTS", "next": "quests" },
+				{ "text": "BARTENDER_CHOICE_TURN_IN_GEM", "next": "turn_in_gem" },
 				{ "text": "DIALOG_GOODBYE", "next": "" }
 			]
 		},
@@ -46,9 +47,45 @@
 			"text": "BARTENDER_DIALOG_QUESTS",
 			"voice": "BARTENDER_QUESTS",
 			"choices": [
+				{ "text": "BARTENDER_CHOICE_GEM_JOB", "next": "quest_mystery_gem" },
 				{ "text": "BARTENDER_CHOICE_THANKS", "next": "" },
 				{ "text": "BARTENDER_CHOICE_SOMETHING_ELSE", "next": "start" }
 			]
+		},
+		"quest_mystery_gem": {
+			"speaker": "NPC_BARTENDER",
+			"text": "BARTENDER_DIALOG_GEM",
+			"choices": [
+				{ "text": "BARTENDER_CHOICE_ACCEPT_GEM", "next": "quest_mystery_gem_accepted" },
+				{ "text": "BARTENDER_CHOICE_DECLINE_QUEST", "next": "start" }
+			]
+		},
+		"turn_in_gem": {
+			"speaker": "NPC_BARTENDER",
+			"text": "BARTENDER_DIALOG_TURN_IN_SUCCESS",
+			"turn_in_quest": {
+				"quest_id": "QUEST_MYSTERY_GEM",
+				"item_id": "mysterious_gem",
+				"fail": "turn_in_gem_fail"
+			},
+			"next": ""
+		},
+		"turn_in_gem_fail": {
+			"speaker": "NPC_BARTENDER",
+			"text": "BARTENDER_DIALOG_TURN_IN_FAIL",
+			"next": "start"
+		},
+		"quest_mystery_gem_accepted": {
+			"speaker": "NPC_BARTENDER",
+			"text": "BARTENDER_DIALOG_GEM_ACCEPTED",
+			"give_quest": {
+				"title_key": "QUEST_MYSTERY_GEM",
+				"giver_key": "QUEST_MYSTERY_GEM_GIVER",
+				"desc_key": "QUEST_MYSTERY_GEM_DESC",
+				"reward_key": "QUEST_MYSTERY_GEM_REWARD",
+				"rank": "E"
+			},
+			"next": ""
 		}
 	}
 }

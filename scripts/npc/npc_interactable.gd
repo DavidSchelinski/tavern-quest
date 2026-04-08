@@ -6,65 +6,76 @@
 class_name NpcInteractable
 extends Node3D
 
-## Path to the dialog JSON file (e.g. "res://data/dialogs/bartender.json")
-@export var dialog_path : String = ""
-
-## Translation key for the NPC's display name
-@export var npc_name_key : String = ""
-
-## How close the player must be to see the interact hint
+@export var dialog_path    : String = ""
+@export var npc_name_key   : String = ""
 @export var interact_radius : float = 4.0
 
-var _hint           : Label3D
-var _player_nearby  : bool   = false
-var _player_ref     : Node3D = null
-var _in_dialog      : bool   = false
+var _hint          : Label3D = null
+var _player_nearby : bool    = false
+var _player_ref    : Node3D  = null
+var _in_dialog     : bool    = false
+var _detect_area   : Area3D  = null
 
 
 func _ready() -> void:
 	add_to_group("npc")
 	add_to_group("interactable")
 	_build_hint()
+	_build_detect_area()
 	DialogManager.dialog_ended.connect(_on_dialog_ended)
 
 
 func _build_hint() -> void:
 	_hint = Label3D.new()
-	_hint.text        = "[E] " + tr("ACTION_INTERACT")
-	_hint.billboard   = BaseMaterial3D.BILLBOARD_ENABLED
-	_hint.font_size   = 24
-	_hint.pixel_size  = 0.007
-	_hint.modulate    = Color(0.95, 0.88, 0.60, 1)
+	_hint.text             = "[E] " + tr("ACTION_INTERACT")
+	_hint.billboard        = BaseMaterial3D.BILLBOARD_ENABLED
+	_hint.font_size        = 24
+	_hint.pixel_size       = 0.007
+	_hint.modulate         = Color(0.95, 0.88, 0.60, 1.0)
 	_hint.outline_size     = 5
-	_hint.outline_modulate = Color(0.08, 0.05, 0.01, 1)
-	_hint.visible     = false
-	_hint.position    = Vector3(0, 2.4, 0)
+	_hint.outline_modulate = Color(0.08, 0.05, 0.01, 1.0)
+	_hint.visible          = false
+	_hint.position         = Vector3(0.0, 2.4, 0.0)
 	add_child(_hint)
 
 
-func _process(_delta: float) -> void:
-	if _in_dialog:
-		return
-	var players := get_tree().get_nodes_in_group("player")
-	if players.is_empty():
-		return
+## Uses an Area3D instead of scanning the player group every frame.
+func _build_detect_area() -> void:
+	_detect_area = Area3D.new()
+	_detect_area.name            = "DetectArea"
+	_detect_area.collision_layer = 0
+	_detect_area.collision_mask  = 2   # player layer
+	_detect_area.monitoring      = true
+	_detect_area.monitorable     = false
 
-	# Find nearest local player
-	var nearest : Node3D = null
-	var nearest_dist := INF
-	for p in players:
-		var d := global_position.distance_to(p.global_position)
-		if d < nearest_dist:
-			nearest_dist = d
-			nearest = p
+	var col   := CollisionShape3D.new()
+	var shape := SphereShape3D.new()
+	shape.radius = interact_radius
+	col.shape    = shape
+	_detect_area.add_child(col)
+	add_child(_detect_area)
 
-	var nearby := nearest_dist <= interact_radius
-	if nearby == _player_nearby:
+	_detect_area.body_entered.connect(_on_body_entered)
+	_detect_area.body_exited.connect(_on_body_exited)
+
+
+func _on_body_entered(body: Node3D) -> void:
+	if not body.is_in_group("player"):
 		return
+	# Only react to the local player.
+	if body.has_method("_is_mine") and not body.call("_is_mine"):
+		return
+	_player_nearby = true
+	_player_ref    = body
+	_hint.visible  = not _in_dialog
 
-	_player_nearby = nearby
-	_player_ref    = nearest if nearby else null
-	_hint.visible  = nearby and not _in_dialog
+
+func _on_body_exited(body: Node3D) -> void:
+	if body != _player_ref:
+		return
+	_player_nearby = false
+	_player_ref    = null
+	_hint.visible  = false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -75,20 +86,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		interact(_player_ref)
 
 
-## Called when the player interacts (raycast or proximity).
 func interact(player: Node3D) -> void:
 	if _in_dialog:
 		return
-	_in_dialog = true
+	if player == null or not is_instance_valid(player):
+		return
+	_in_dialog    = true
 	_hint.visible = false
-	_player_ref = player
+	_player_ref   = player
 
-	# Put player into dialog state
 	if player.has_method("enter_dialog"):
 		player.enter_dialog()
 
-	# Start dialog
-	var path := _get_dialog_path()
+	var path : String = _get_dialog_path()
 	if not path.is_empty():
 		DialogManager.start(self, path)
 	else:
@@ -96,7 +106,6 @@ func interact(player: Node3D) -> void:
 		_in_dialog = false
 
 
-## Override in subclass to dynamically choose a dialog file.
 func _get_dialog_path() -> String:
 	return dialog_path
 
@@ -105,6 +114,14 @@ func _on_dialog_ended(npc: Node3D) -> void:
 	if npc != self:
 		return
 	_in_dialog = false
-	if _player_ref and _player_ref.has_method("exit_dialog"):
-		_player_ref.exit_dialog()
-	_player_ref = null
+	var prev := _player_ref
+	if prev != null and is_instance_valid(prev):
+		if prev.has_method("exit_dialog"):
+			prev.exit_dialog()
+		# Keep the reference if the player is still within range so the next
+		# E-press works correctly (area_entered won't fire again for a body
+		# that is already inside the area).
+		if not _detect_area.get_overlapping_bodies().has(prev):
+			_player_ref = null
+	else:
+		_player_ref = null

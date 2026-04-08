@@ -23,6 +23,7 @@ VoiceOver="*res://scripts/voice_over.gd"
 DialogManager="*res://scripts/dialog/dialog_manager.gd"
 InventoryManager="*res://scripts/inventory/inventory_manager.gd"
 CharacterStats="*res://scripts/player/character_stats.gd"
+QuestManager="*res://scripts/world/quest_manager.gd"
 
 [display]
 

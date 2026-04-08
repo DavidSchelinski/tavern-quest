@@ -36,10 +36,22 @@ var _split_slot   : int     = -1
 var _placeholder_cache : Dictionary = {}
 
 # ── Character page ────────────────────────────────────────────────────────────
-var _stat_points_label : Label     = null
+var _stat_points_label : Label      = null
 var _stat_val_labels   : Dictionary = {}   # stat → Label
 var _stat_plus_btns    : Dictionary = {}   # stat → Button
 var _derived_labels    : Dictionary = {}   # key  → Label
+
+# ── Quest page ────────────────────────────────────────────────────────────────
+var _quest_list_box     : VBoxContainer = null   # left column entries
+var _quest_detail_panel : Control       = null   # right column
+var _detail_title       : Label         = null
+var _detail_rank        : Label         = null
+var _detail_giver       : Label         = null
+var _detail_desc        : RichTextLabel = null
+var _detail_reward      : Label         = null
+var _detail_status      : Label         = null
+var _selected_quest     : Dictionary    = {}
+var _quest_entry_btns   : Array[Button] = []
 
 
 func _ready() -> void:
@@ -48,6 +60,7 @@ func _ready() -> void:
 	visible = false
 	InventoryManager.slot_changed.connect(_on_slot_changed)
 	CharacterStats.stats_changed.connect(_on_stats_changed)
+	QuestManager.quests_changed.connect(_on_quests_changed)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -58,8 +71,6 @@ func open(player: Node3D) -> void:
 	_player_ref = player
 	visible = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	_refresh_all_slots()
-	_refresh_character_page()
 	_switch_tab(_current_tab)
 
 
@@ -135,7 +146,14 @@ func _build_ui() -> void:
 	_pages.append(inv_page)
 	_build_inventory_page(inv_page, panel_w, grid_w, grid_h)
 
-	# Page 1 – Character.
+	# Page 1 – Quests.
+	var quest_page := Control.new()
+	quest_page.size = Vector2(panel_w, content_h)
+	content.add_child(quest_page)
+	_pages.append(quest_page)
+	_build_quest_page(quest_page, panel_w, content_h)
+
+	# Page 2 – Character.
 	var char_page := Control.new()
 	char_page.size = Vector2(panel_w, content_h)
 	content.add_child(char_page)
@@ -165,7 +183,7 @@ func _build_ui() -> void:
 # ── Tab strip ──────────────────────────────────────────────────────────────────
 
 func _build_tab_strip(parent: Control, panel_w: float) -> void:
-	var labels := ["Inventar", "Charakter"]
+	var labels := ["Inventar", "Quests", "Charakter"]
 	var tab_w  := panel_w / labels.size()
 
 	for i in labels.size():
@@ -186,8 +204,10 @@ func _switch_tab(index: int) -> void:
 	for i in _pages.size():
 		_pages[i].visible = (i == index)
 	_apply_tab_styles()
-	if index == 1:
-		_refresh_character_page()
+	match index:
+		0: _refresh_all_slots()
+		1: _refresh_quest_page()
+		2: _refresh_character_page()
 
 
 func _apply_tab_styles() -> void:
@@ -209,6 +229,339 @@ func _apply_tab_styles() -> void:
 		var col := Color(0.95, 0.78, 0.45, 1.0) if active else Color(0.58, 0.54, 0.48, 1.0)
 		btn.add_theme_color_override("font_color",       col)
 		btn.add_theme_color_override("font_hover_color", Color(1.0, 0.88, 0.60, 1.0))
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  BUILD – QUEST PAGE
+# ──────────────────────────────────────────────────────────────────────────────
+
+const QUEST_LIST_W  : float = 172.0   # width of the left list column
+const QUEST_COL_GAP : float = 8.0
+
+const RANK_COLORS : Dictionary = {
+	"F": Color(0.60, 0.60, 0.60, 1.0),
+	"E": Color(0.35, 0.80, 0.35, 1.0),
+	"D": Color(0.35, 0.55, 0.95, 1.0),
+	"C": Color(0.95, 0.60, 0.20, 1.0),
+	"B": Color(0.90, 0.25, 0.25, 1.0),
+	"A": Color(0.75, 0.30, 0.95, 1.0),
+	"S": Color(0.95, 0.80, 0.10, 1.0),
+}
+
+
+func _build_quest_page(page: Control, panel_w: float, page_h: float) -> void:
+	var p : float = PAD
+
+	# ── Page title ──
+	var title := Label.new()
+	title.text     = "Questtagebuch"
+	title.position = Vector2(p, 8.0)
+	title.size     = Vector2(panel_w - p * 2.0, 28.0)
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(0.90, 0.75, 0.45, 1.0))
+	page.add_child(title)
+
+	var content_y : float = 40.0
+	var content_h : float = page_h - content_y - p
+
+	# ── Left: scrollable quest list ──
+	var scroll := ScrollContainer.new()
+	scroll.position                          = Vector2(p, content_y)
+	scroll.size                              = Vector2(QUEST_LIST_W, content_h)
+	scroll.vertical_scroll_mode             = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.horizontal_scroll_mode           = ScrollContainer.SCROLL_MODE_DISABLED
+	page.add_child(scroll)
+
+	_quest_list_box = VBoxContainer.new()
+	_quest_list_box.size_flags_horizontal   = Control.SIZE_EXPAND_FILL
+	_quest_list_box.add_theme_constant_override("separation", 3)
+	scroll.add_child(_quest_list_box)
+
+	# ── Vertical divider ──
+	var div := ColorRect.new()
+	div.position = Vector2(p + QUEST_LIST_W + QUEST_COL_GAP * 0.5 - 1.0, content_y)
+	div.size     = Vector2(1.0, content_h)
+	div.color    = Color(0.45, 0.38, 0.28, 0.50)
+	page.add_child(div)
+
+	# ── Right: detail panel ──
+	var detail_x : float = p + QUEST_LIST_W + QUEST_COL_GAP
+	var detail_w : float = panel_w - detail_x - p
+	_quest_detail_panel = Control.new()
+	_quest_detail_panel.position = Vector2(detail_x, content_y)
+	_quest_detail_panel.size     = Vector2(detail_w, content_h)
+	page.add_child(_quest_detail_panel)
+	_build_quest_detail_panel(_quest_detail_panel, detail_w, content_h)
+
+
+func _build_quest_detail_panel(parent: Control, w: float, h: float) -> void:
+	# Empty-state hint (shown when nothing is selected).
+	var hint := Label.new()
+	hint.name                    = "EmptyHint"
+	hint.text                    = "← Quest auswählen"
+	hint.horizontal_alignment    = HORIZONTAL_ALIGNMENT_CENTER
+	hint.vertical_alignment      = VERTICAL_ALIGNMENT_CENTER
+	hint.position                = Vector2(0.0, 0.0)
+	hint.size                    = Vector2(w, h)
+	hint.add_theme_font_size_override("font_size", 14)
+	hint.add_theme_color_override("font_color", Color(0.45, 0.42, 0.38, 1.0))
+	hint.autowrap_mode           = TextServer.AUTOWRAP_WORD
+	parent.add_child(hint)
+
+	var dp : float = 8.0   # detail inner padding
+
+	# Rank badge.
+	_detail_rank = Label.new()
+	_detail_rank.position = Vector2(dp, dp)
+	_detail_rank.size     = Vector2(48.0, 28.0)
+	_detail_rank.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_detail_rank.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	_detail_rank.add_theme_font_size_override("font_size", 15)
+	_detail_rank.visible = false
+	var rank_style := StyleBoxFlat.new()
+	rank_style.bg_color = Color(0.18, 0.14, 0.10, 0.9)
+	rank_style.set_border_width_all(2)
+	rank_style.set_corner_radius_all(4)
+	rank_style.border_color = Color(0.55, 0.45, 0.30, 1.0)
+	_detail_rank.add_theme_stylebox_override("normal", rank_style)
+	parent.add_child(_detail_rank)
+
+	# Quest title.
+	_detail_title = Label.new()
+	_detail_title.position      = Vector2(dp + 56.0, dp)
+	_detail_title.size          = Vector2(w - dp - 56.0, 28.0)
+	_detail_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_detail_title.clip_text     = true
+	_detail_title.add_theme_font_size_override("font_size", 16)
+	_detail_title.add_theme_color_override("font_color", Color(0.92, 0.82, 0.55, 1.0))
+	_detail_title.visible = false
+	parent.add_child(_detail_title)
+
+	# Separator.
+	var sep := ColorRect.new()
+	sep.name     = "DetailSep"
+	sep.position = Vector2(dp, dp + 34.0)
+	sep.size     = Vector2(w - dp * 2.0, 1.0)
+	sep.color    = Color(0.45, 0.38, 0.28, 0.40)
+	sep.visible  = false
+	parent.add_child(sep)
+
+	# Giver.
+	_detail_giver = Label.new()
+	_detail_giver.position = Vector2(dp, dp + 42.0)
+	_detail_giver.size     = Vector2(w - dp * 2.0, 20.0)
+	_detail_giver.add_theme_font_size_override("font_size", 13)
+	_detail_giver.add_theme_color_override("font_color", Color(0.65, 0.60, 0.50, 1.0))
+	_detail_giver.visible = false
+	parent.add_child(_detail_giver)
+
+	# Description.
+	_detail_desc = RichTextLabel.new()
+	_detail_desc.position         = Vector2(dp, dp + 68.0)
+	_detail_desc.size             = Vector2(w - dp * 2.0, h - dp - 68.0 - 58.0)
+	_detail_desc.bbcode_enabled   = false
+	_detail_desc.scroll_active    = true
+	_detail_desc.autowrap_mode    = TextServer.AUTOWRAP_WORD
+	_detail_desc.add_theme_font_size_override("normal_font_size", 13)
+	_detail_desc.add_theme_color_override("default_color", Color(0.82, 0.78, 0.70, 1.0))
+	_detail_desc.visible = false
+	parent.add_child(_detail_desc)
+
+	# Reward row.
+	_detail_reward = Label.new()
+	_detail_reward.position      = Vector2(dp, h - dp - 50.0)
+	_detail_reward.size          = Vector2(w - dp * 2.0, 22.0)
+	_detail_reward.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_detail_reward.add_theme_font_size_override("font_size", 13)
+	_detail_reward.add_theme_color_override("font_color", Color(0.45, 0.82, 0.45, 1.0))
+	_detail_reward.visible = false
+	parent.add_child(_detail_reward)
+
+	# Status badge.
+	_detail_status = Label.new()
+	_detail_status.position              = Vector2(dp, h - dp - 24.0)
+	_detail_status.size                  = Vector2(w - dp * 2.0, 20.0)
+	_detail_status.horizontal_alignment  = HORIZONTAL_ALIGNMENT_RIGHT
+	_detail_status.add_theme_font_size_override("font_size", 12)
+	_detail_status.visible = false
+	parent.add_child(_detail_status)
+
+
+# ── QUEST PAGE REFRESH ────────────────────────────────────────────────────────
+
+func _on_quests_changed() -> void:
+	if visible and _current_tab == 1:
+		_refresh_quest_page()
+
+
+func _refresh_quest_page() -> void:
+	if _quest_list_box == null:
+		return
+
+	# Clear ALL children (labels, buttons, spacers).
+	for child in _quest_list_box.get_children():
+		child.queue_free()
+	_quest_entry_btns.clear()
+
+	var active    : Array[Dictionary] = QuestManager.get_active_quests()
+	var completed : Array[Dictionary] = QuestManager.get_completed_quests()
+
+	if active.is_empty() and completed.is_empty():
+		_add_list_placeholder("Noch keine Quests.\nBesuche das Quest-Board.")
+		_clear_quest_detail()
+		return
+
+	if not active.is_empty():
+		_add_list_header("Aktive Quests (%d)" % active.size())
+		for q : Dictionary in active:
+			_add_quest_entry(q, false)
+
+	if not completed.is_empty():
+		if not active.is_empty():
+			var spacer := Control.new()
+			spacer.custom_minimum_size = Vector2(0.0, 6.0)
+			_quest_list_box.add_child(spacer)
+			_quest_entry_btns.append(Button.new())   # dummy to track for cleanup
+			_quest_entry_btns[-1].visible = false
+		_add_list_header("Abgeschlossen (%d)" % completed.size())
+		for q : Dictionary in completed:
+			_add_quest_entry(q, true)
+
+	# Re-select currently shown quest if it still exists.
+	if not _selected_quest.is_empty():
+		var id : String = _selected_quest.get("title_key", "") as String
+		if QuestManager.is_quest_active(id) or QuestManager.is_quest_completed(id):
+			_show_quest_detail(_selected_quest)
+			return
+	_clear_quest_detail()
+
+
+func _add_list_placeholder(text: String) -> void:
+	var lbl := Label.new()
+	lbl.text          = text
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+	lbl.add_theme_font_size_override("font_size", 13)
+	lbl.add_theme_color_override("font_color", Color(0.50, 0.48, 0.44, 1.0))
+	_quest_list_box.add_child(lbl)
+	# Track via a hidden Button so cleanup stays uniform.
+	var dummy := Button.new()
+	dummy.visible = false
+	_quest_list_box.add_child(dummy)
+	_quest_entry_btns.append(dummy)
+
+
+func _add_list_header(text: String) -> void:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", 12)
+	lbl.add_theme_color_override("font_color", Color(0.58, 0.54, 0.47, 1.0))
+	lbl.custom_minimum_size = Vector2(QUEST_LIST_W - 8.0, 18.0)
+	_quest_list_box.add_child(lbl)
+	var dummy := Button.new()
+	dummy.visible = false
+	_quest_list_box.add_child(dummy)
+	_quest_entry_btns.append(dummy)
+
+
+func _add_quest_entry(quest: Dictionary, is_completed: bool) -> void:
+	var rank  : String = quest.get("rank", "?") as String
+	var title : String = tr(quest.get("title_key", "") as String)
+
+	var btn := Button.new()
+	btn.text                  = "[%s] %s" % [rank, title]
+	btn.clip_text             = true
+	btn.alignment             = HORIZONTAL_ALIGNMENT_LEFT
+	btn.custom_minimum_size   = Vector2(QUEST_LIST_W - 8.0, 30.0)
+	btn.flat                  = false
+
+	var rank_col : Color = RANK_COLORS.get(rank, Color.WHITE) as Color
+	if is_completed:
+		rank_col = rank_col.lerp(Color(0.5, 0.5, 0.5, 1.0), 0.55)
+
+	var s := StyleBoxFlat.new()
+	s.bg_color     = Color(0.15, 0.12, 0.10, 0.70)
+	s.border_color = rank_col.darkened(0.2)
+	s.set_border_width_all(1)
+	s.border_width_left = 3
+	s.border_color      = rank_col
+	s.set_corner_radius_all(3)
+	btn.add_theme_stylebox_override("normal", s)
+
+	var s_hover := s.duplicate() as StyleBoxFlat
+	s_hover.bg_color = Color(0.22, 0.18, 0.14, 0.90)
+	btn.add_theme_stylebox_override("hover", s_hover)
+
+	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_color_override("font_color",
+		Color(0.65, 0.62, 0.56, 1.0) if is_completed else Color(0.88, 0.84, 0.72, 1.0))
+
+	btn.pressed.connect(func() -> void: _show_quest_detail(quest))
+	_quest_list_box.add_child(btn)
+	_quest_entry_btns.append(btn)
+
+
+func _show_quest_detail(quest: Dictionary) -> void:
+	_selected_quest = quest
+	var quest_id : String = quest.get("title_key", "") as String
+	var is_done  : bool   = QuestManager.is_quest_completed(quest_id)
+	var rank     : String = quest.get("rank", "?") as String
+
+	# Hide empty hint.
+	var hint := _quest_detail_panel.get_node_or_null("EmptyHint") as Label
+	if hint:
+		hint.visible = false
+
+	# Rank badge.
+	_detail_rank.text    = rank
+	_detail_rank.visible = true
+	var rank_col : Color = RANK_COLORS.get(rank, Color.WHITE) as Color
+	_detail_rank.add_theme_color_override("font_color", rank_col)
+
+	# Title.
+	_detail_title.text    = tr(quest_id)
+	_detail_title.visible = true
+
+	# Separator.
+	var sep := _quest_detail_panel.get_node_or_null("DetailSep")
+	if sep:
+		sep.visible = true
+
+	# Giver.
+	_detail_giver.text    = "Auftraggeber: " + tr(quest.get("giver_key", "") as String)
+	_detail_giver.visible = true
+
+	# Description.
+	_detail_desc.text    = tr(quest.get("desc_key", "") as String)
+	_detail_desc.visible = true
+
+	# Reward.
+	_detail_reward.text    = "Belohnung: " + tr(quest.get("reward_key", "") as String)
+	_detail_reward.visible = true
+
+	# Status.
+	if is_done:
+		_detail_status.text = "✓ Abgeschlossen"
+		_detail_status.add_theme_color_override("font_color", Color(0.45, 0.80, 0.45, 1.0))
+	else:
+		_detail_status.text = "● Aktiv"
+		_detail_status.add_theme_color_override("font_color", Color(0.90, 0.75, 0.25, 1.0))
+	_detail_status.visible = true
+
+
+func _clear_quest_detail() -> void:
+	_selected_quest = {}
+	var hint := _quest_detail_panel.get_node_or_null("EmptyHint") as Label
+	if hint:
+		hint.visible = true
+	if _detail_rank:   _detail_rank.visible   = false
+	if _detail_title:  _detail_title.visible  = false
+	if _detail_giver:  _detail_giver.visible  = false
+	if _detail_desc:   _detail_desc.visible   = false
+	if _detail_reward: _detail_reward.visible = false
+	if _detail_status: _detail_status.visible = false
+	var sep := _quest_detail_panel.get_node_or_null("DetailSep")
+	if sep:
+		sep.visible = false
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -448,7 +801,7 @@ func _make_panel_style(bg: Color) -> StyleBoxFlat:
 # ──────────────────────────────────────────────────────────────────────────────
 
 func _on_stats_changed() -> void:
-	if visible and _current_tab == 1:
+	if visible and _current_tab == 2:
 		_refresh_character_page()
 
 

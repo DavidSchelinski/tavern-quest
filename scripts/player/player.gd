@@ -45,10 +45,13 @@ var _dialog_ui            : CanvasLayer = null
 var _inventory_ui         : CanvasLayer = null
 
 # ── Pickup focus ──────────────────────────────────────────────────────────────
-const PICKUP_RADIUS       := 3.0
-const FOCUS_SWITCH_DELAY  := 0.25  # seconds before focus can switch to a new item
-const FOCUS_STICK_BIAS    := 0.15  # score advantage needed to steal focus from current
-var _focus_cooldown       : float  = 0.0
+const PICKUP_RADIUS        : float = 3.0
+const FOCUS_SWITCH_DELAY   : float = 0.25   # seconds before focus can switch to a new item
+const FOCUS_STICK_BIAS     : float = 0.15   # score advantage needed to steal focus from current
+const PICKABLE_CACHE_SECS  : float = 0.4    # how often to refresh the nearby-pickables list
+var _focus_cooldown        : float = 0.0
+var _pickable_cache_timer  : float = 0.0
+var _cached_pickables      : Array[Node3D] = []
 
 # ── Animation ─────────────────────────────────────────────────────────────────
 var _anim_player  : AnimationPlayer = null
@@ -400,16 +403,16 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("jump") and on_floor and not is_attacking:
 		velocity.y = JUMP_VELOCITY
 
-	var sprinting  := Input.is_action_pressed("sprint")
-	var speed      := (SPRINT_SPEED if sprinting else WALK_SPEED) \
-					  * CharacterStats.get_speed_multiplier()
-	var input_dir  := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var sprinting  : bool    = Input.is_action_pressed("sprint")
+	var speed      : float   = (SPRINT_SPEED if sprinting else WALK_SPEED) \
+							   * CharacterStats.get_speed_multiplier()
+	var input_dir  : Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 
-	var direction := Vector3.ZERO
+	var direction : Vector3 = Vector3.ZERO
 	if input_dir != Vector2.ZERO:
-		direction = (camera_yaw.transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+		direction = (camera_yaw.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 
-	var moving := direction != Vector3.ZERO
+	var moving : bool = direction != Vector3.ZERO
 
 	_update_anim_state(moving, sprinting)
 
@@ -478,18 +481,30 @@ func _apply_remote_animations() -> void:
 func _process(delta: float) -> void:
 	if not _is_mine() or state != State.NORMAL:
 		return
-	_focus_cooldown = maxf(_focus_cooldown - delta, 0.0)
+	_focus_cooldown       = maxf(_focus_cooldown - delta, 0.0)
+	_pickable_cache_timer = maxf(_pickable_cache_timer - delta, 0.0)
+	if _pickable_cache_timer == 0.0:
+		_pickable_cache_timer = PICKABLE_CACHE_SECS
+		_refresh_pickable_cache()
 	_update_interactable_focus()
+
+
+func _refresh_pickable_cache() -> void:
+	_cached_pickables.clear()
+	for p : Node in get_tree().get_nodes_in_group("pickable"):
+		if p is Node3D:
+			_cached_pickables.append(p as Node3D)
 
 
 func _update_interactable_focus() -> void:
 	# 1) Raycast — prioritises non-pickable interactables (NPCs, quest board, etc.)
-	var space  := get_world_3d().direct_space_state
-	var origin := camera.global_position
-	var fwd    := -camera.global_transform.basis.z
-	var query  := PhysicsRayQueryParameters3D.create(origin, origin + fwd * RAY_LENGTH)
+	var space  : PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	var origin : Vector3 = camera.global_position
+	var fwd    : Vector3 = -camera.global_transform.basis.z
+	var query  : PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		origin, origin + fwd * RAY_LENGTH)
 	query.exclude = [get_rid()]
-	var result := space.intersect_ray(query)
+	var result : Dictionary = space.intersect_ray(query)
 
 	var ray_hit : Node3D = null
 	if result and result.collider.is_in_group("interactable"):
@@ -506,11 +521,12 @@ func _update_interactable_focus() -> void:
 		return
 
 	# 2) Among nearby pickable items, choose the best one (distance + aim).
-	var best : Node3D = null
-	var best_score := -INF
-	var pickables := get_tree().get_nodes_in_group("pickable")
+	# Uses a cached list refreshed every PICKABLE_CACHE_SECS instead of
+	# calling get_nodes_in_group every frame.
+	var best       : Node3D = null
+	var best_score : float  = -INF
 
-	for p : Node3D in pickables:
+	for p : Node3D in _cached_pickables:
 		if not is_instance_valid(p):
 			continue
 		var dist : float = global_position.distance_to(p.global_position)

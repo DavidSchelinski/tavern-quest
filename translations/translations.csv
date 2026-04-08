@@ -84,4 +84,16 @@ BARTENDER_DIALOG_DRINK,"Natürlich! Unser Honigmet ist der beste im ganzen Köni
 BARTENDER_DIALOG_DRINK_THANKS,"Gern geschehen! Komm jederzeit wieder, wenn du Durst hast.","You're welcome! Come back anytime you're thirsty."
 BARTENDER_DIALOG_RUMORS,"Hmm… man munkelt, dass seltsame Lichter in den Ruinen östlich der Stadt gesichtet wurden. Klingt gefährlich.","Hmm… word is strange lights have been spotted in the ruins east of town. Sounds dangerous."
 BARTENDER_DIALOG_RUMORS_DETAIL,"Ein Händler namens Darius ist vor ein paar Tagen auf der Nordstraße verschwunden. Die Stadtwache sucht noch nach ihm. Vielleicht lohnt es sich, am Questboard vorbeizuschauen.","A merchant named Darius disappeared on the north road a few days ago. The town guard is still searching. Might be worth checking the quest board."
-BARTENDER_DIALOG_QUESTS,"Am Quest Board dort drüben hängen immer Aufträge aus. Schau mal vorbei – da ist bestimmt etwas für dich dabei.","The Quest Board over there always has jobs posted. Take a look – there's bound to be something for you."
+BARTENDER_DIALOG_QUESTS,"Am Quest Board dort drüben hängen immer Aufträge aus. Schau mal vorbei – da ist bestimmt etwas für dich dabei. Ach, und ich hätte da selbst noch eine Kleinigkeit…","The Quest Board over there always has jobs posted. Take a look – there's bound to be something for you. Oh, and I have a small job myself…"
+BARTENDER_CHOICE_GEM_JOB,Was für eine Kleinigkeit?,What kind of small job?
+BARTENDER_DIALOG_GEM,"Ein seltsam leuchtender Stein liegt bei dem Trainings-Dummy herum. Kein Ahnung, woher der kommt – aber ich würde ihn gerne haben. Bringst du ihn mir?","A strangely glowing gem is lying near the training dummy. No idea where it came from, but I'd love to have it. Will you bring it to me?"
+BARTENDER_CHOICE_ACCEPT_GEM,Klingt einfach. Ich bringe dir den Stein!,Sounds easy. I'll bring you the gem!
+BARTENDER_CHOICE_DECLINE_QUEST,Vielleicht ein anderes Mal.,Maybe another time.
+BARTENDER_DIALOG_GEM_ACCEPTED,"Wunderbar! Besiege den Dummy und bring mir den mysteriösen Stein. Ich verlasse mich auf dich!","Wonderful! Defeat the dummy and bring me the mysterious gem. I'm counting on you!"
+QUEST_MYSTERY_GEM,Der mysteriöse Stein,The Mysterious Gem
+QUEST_MYSTERY_GEM_GIVER,Wirt,Bartender
+QUEST_MYSTERY_GEM_DESC,"Der Wirt der Taverne hat dich gebeten, den mysteriösen Stein zu besorgen, den der Trainings-Dummy fallen lässt. Besiege den Dummy und bringe dem Wirt den Stein.","The tavern keeper has asked you to retrieve the mysterious gem dropped by the training dummy. Defeat the dummy and bring the gem to the keeper."
+QUEST_MYSTERY_GEM_REWARD,30 Gold,30 gold
+BARTENDER_CHOICE_TURN_IN_GEM,Ich habe den mysteriösen Stein für dich.,I found the mysterious gem for you.
+BARTENDER_DIALOG_TURN_IN_SUCCESS,"Ausgezeichnet! Das ist er! Hier sind deine 30 Gold – du hast dir das redlich verdient. Komm jederzeit wieder!","Excellent! That's the one! Here are your 30 gold – well earned. Come back any time!"
+BARTENDER_DIALOG_TURN_IN_FAIL,"Den mysteriösen Stein? Den hast du noch nicht gefunden. Besiege den Trainings-Dummy und bring ihn mir!","The mysterious gem? You haven't found it yet. Defeat the training dummy and bring it to me!"
