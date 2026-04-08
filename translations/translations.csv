@@ -96,4 +96,45 @@ QUEST_MYSTERY_GEM_DESC,"Der Wirt der Taverne hat dich gebeten, den mysteriösen 
 QUEST_MYSTERY_GEM_REWARD,30 Gold,30 gold
 BARTENDER_CHOICE_TURN_IN_GEM,Ich habe den mysteriösen Stein für dich.,I found the mysterious gem for you.
 BARTENDER_DIALOG_TURN_IN_SUCCESS,"Ausgezeichnet! Das ist er! Hier sind deine 30 Gold – du hast dir das redlich verdient. Komm jederzeit wieder!","Excellent! That's the one! Here are your 30 gold – well earned. Come back any time!"
+QUEST_GATHER_HERBS,Kräuter sammeln,Gather Herbs
+QUEST_GATHER_HERBS_GIVER,Kräuterhändlerin Lena,Herbalist Lena
+QUEST_GATHER_HERBS_DESC,Lena braucht dringend Heilkräuter aus dem Wald am Stadtrand. Sammle eine Handvoll und bringe sie ihr.,Lena urgently needs healing herbs from the forest at the edge of town. Gather a handful and bring them to her.
+QUEST_GATHER_HERBS_REWARD,5 Gold,5 gold
+QUEST_DELIVER_LETTER,Brief überbringen,Deliver a Letter
+QUEST_DELIVER_LETTER_GIVER,Händler Torben,Merchant Torben
+QUEST_DELIVER_LETTER_DESC,Händler Torben möchte, dass du einen wichtigen Brief zu seiner Schwester am anderen Ende der Stadt bringst. Einfache Aufgabe für einen Anfänger.,Merchant Torben needs a letter delivered to his sister on the other side of town. A simple task for a beginner.
+QUEST_DELIVER_LETTER_REWARD,5 Gold + Dankeschön,5 gold + thanks
+QUEST_SCARE_CROWS,Krähen verscheuchen,Scare off Crows
+QUEST_SCARE_CROWS_GIVER,Bauer Heinrich,Farmer Heinrich
+QUEST_SCARE_CROWS_DESC,Krähen haben Heinrichs Weizenfeld überrannt. Geh auf das Feld und verscheuche die Vögel — bevor die ganze Ernte vernichtet ist.,Crows have overrun Heinrich's wheat field. Go to the field and drive the birds away — before the entire harvest is ruined.
+QUEST_SCARE_CROWS_REWARD,8 Gold + frisches Brot,8 gold + fresh bread
+QUEST_RANK_LOCKED_FMT,Rang %s erforderlich,Rank %s required
+NPC_RECEPTIONIST,Rezeptionistin,Receptionist
+RECEPTIONIST_GREETING,"Guten Tag, Abenteurer! Wie kann ich dir helfen?","Good day, adventurer! How can I help you?"
+RECEPTIONIST_CHOICE_RANK,Zeig mir meinen aktuellen Rang.,Show me my current rank.
+RECEPTIONIST_RANK_INFO_FMT,"Dein Rang: %s\nQuestpunkte: %d / %d","Your rank: %s\nQuest points: %d / %d"
+RECEPTIONIST_RANK_READY,Du hast genug Punkte! Sprich mit dem Gildenleiter für deine Aufstiegsquest.,You have enough points! Talk to the Guild Leader for your promotion quest.
+RECEPTIONIST_RANK_MAX,Du hast den höchsten Rang der Gilde erreicht! Mein Respekt.,You have achieved the highest rank in the guild! My respect.
+RECEPTIONIST_RANK_PROGRESS,Noch %d Questpunkt(e) bis zur Aufstiegsquest.,Still %d quest point(s) until the promotion quest.
+RECEPTIONIST_PROMO_ACTIVE,Du hast die Aufstiegsquest bereits angenommen. Viel Erfolg!,You have already accepted the promotion quest. Good luck!
+RECEPTIONIST_NO_QUESTS,"Guten Tag, Abenteurer! Nimm eine Quest vom Board an, schließe sie ab und komm dann zu mir, um deine Belohnung abzuholen.","Good day, adventurer! Accept a quest from the board, complete it, then come back to me to collect your reward."
+RECEPTIONIST_IN_PROGRESS,"Du hast noch aktive Board-Quests laufen. Schließe sie erst ab und komm dann zurück!","You still have active board quests. Finish them first, then come back!"
+RECEPTIONIST_HAS_REWARDS,"Herzlichen Glückwunsch, Abenteurer! Du hast Quests vom Board abgeschlossen. Soll ich dir deine Belohnungen aushändigen?","Congratulations, adventurer! You have completed quests from the board. Shall I hand over your rewards?"
+RECEPTIONIST_COLLECT_ALL,Ja bitte! Ich nehme meine Belohnungen.,Yes please! I'll take my rewards.
+RECEPTIONIST_REWARD_GIVEN,"Hier sind deine verdienten Belohnungen! Gut gemacht. Schau gerne wieder am Board vorbei, wenn du neue Aufgaben suchst.","Here are your well-earned rewards! Well done. Feel free to check the board again when you're looking for new tasks."
 BARTENDER_DIALOG_TURN_IN_FAIL,"Den mysteriösen Stein? Den hast du noch nicht gefunden. Besiege den Trainings-Dummy und bring ihn mir!","The mysterious gem? You haven't found it yet. Defeat the training dummy and bring it to me!"
+NPC_GUILD_LEADER,Gildenleiter,Guild Leader
+GUILD_LEADER_NOT_READY_FMT,"Du benötigst noch %d Questpunkt(e) um die Aufstiegsquest für Rang %s freigeschaltet zu bekommen. Schließe weitere Board-Quests ab!","You need %d more quest point(s) to unlock the promotion quest for rank %s. Complete more board quests!"
+GUILD_LEADER_PROMO_OFFER_FMT,"Beeindruckend! Du hast genug Punkte gesammelt, um zu Rang %s aufzusteigen. Bist du bereit für die Aufstiegsquest?","Impressive! You have earned enough points to advance to rank %s. Are you ready for the promotion quest?"
+GUILD_LEADER_ACCEPT_PROMO,Ich bin bereit! Zeig mir die Aufgabe.,I am ready! Show me the task.
+GUILD_LEADER_PROMO_GIVEN,"Dann beweise dein Können! Die Aufstiegsquest wurde deinem Questtagebuch hinzugefügt. Viel Erfolg, Abenteurer.","Then prove your worth! The promotion quest has been added to your quest log. Good luck, adventurer."
+GUILD_LEADER_PROMO_ACTIVE,"Du hast die Aufstiegsquest bereits angenommen. Schließe sie ab und kehre zu mir zurück — dann steigst du auf!","You have already accepted the promotion quest. Complete it and return to me — then you shall advance!"
+GUILD_LEADER_MAX_RANK,"Du hast den höchsten Rang der Gilde erreicht. Du hast bewiesen, dass du der größte Abenteurer dieses Landes bist.","You have achieved the highest rank of the guild. You have proven yourself the greatest adventurer in this land."
+QUEST_PROMO_F,Aufstieg: F → E,Promotion: F → E
+QUEST_PROMO_E,Aufstieg: E → D,Promotion: E → D
+QUEST_PROMO_D,Aufstieg: D → C,Promotion: D → C
+QUEST_PROMO_C,Aufstieg: C → B,Promotion: C → B
+QUEST_PROMO_B,Aufstieg: B → A,Promotion: B → A
+QUEST_PROMO_A,Aufstieg: A → S,Promotion: A → S
+QUEST_PROMO_DESC,Bestehe die Prüfung des Gildenleiters und beweise dein Können als Abenteurer.,Pass the Guild Leader's test and prove your worth as an adventurer.
+QUEST_PROMO_REWARD_FMT,Aufstieg zum nächsten Rang,Advancement to the next rank

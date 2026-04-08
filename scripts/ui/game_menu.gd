@@ -22,6 +22,7 @@ var _master_slider  : HSlider
 var _fps_check      : CheckButton
 var _fullscreen_check : CheckButton
 var _fps_label      : Label
+var _dev_list       : VBoxContainer = null
 
 
 func _ready() -> void:
@@ -29,6 +30,7 @@ func _ready() -> void:
 	_cfg.load(SETTINGS_PATH)
 	_build_ui()
 	_apply_display_settings()
+	QuestManager.quests_changed.connect(_refresh_dev_tab)
 	visible = false
 
 
@@ -46,6 +48,7 @@ func open() -> void:
 	_fullscreen_check.set_pressed_no_signal(
 		DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
 	)
+	_refresh_dev_tab()
 
 
 func close() -> void:
@@ -135,6 +138,7 @@ func _build_ui() -> void:
 	_build_audio_tab(tabs)
 	_build_display_tab(tabs)
 	_build_controls_tab(tabs)
+	_build_dev_tab(tabs)
 
 	# Bottom buttons
 	var btn_row := HBoxContainer.new()
@@ -374,3 +378,106 @@ func _action_key_string(action: String) -> String:
 
 func _save_settings() -> void:
 	_cfg.save(SETTINGS_PATH)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  DEV TAB
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _build_dev_tab(tabs: TabContainer) -> void:
+	var scroll := ScrollContainer.new()
+	scroll.name = "Dev"
+	tabs.add_child(scroll)
+
+	var v := VBoxContainer.new()
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(v)
+
+	var pad := MarginContainer.new()
+	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pad.add_theme_constant_override("margin_top",   12)
+	pad.add_theme_constant_override("margin_left",  12)
+	pad.add_theme_constant_override("margin_right", 12)
+	v.add_child(pad)
+
+	var inner := VBoxContainer.new()
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inner.add_theme_constant_override("separation", 8)
+	pad.add_child(inner)
+
+	var warning := Label.new()
+	warning.text = "⚠  Nur für Testzwecke / For testing only"
+	warning.add_theme_color_override("font_color", Color(0.95, 0.65, 0.20, 1.0))
+	warning.add_theme_font_size_override("font_size", 13)
+	inner.add_child(warning)
+
+	var sep := HSeparator.new()
+	inner.add_child(sep)
+
+	# Rank info row
+	var rank_row := HBoxContainer.new()
+	inner.add_child(rank_row)
+	var rank_lbl := Label.new()
+	rank_lbl.name = "DevRankLabel"
+	rank_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rank_lbl.add_theme_font_size_override("font_size", 13)
+	rank_row.add_child(rank_lbl)
+
+	var sep2 := HSeparator.new()
+	inner.add_child(sep2)
+
+	var quests_lbl := Label.new()
+	quests_lbl.text = "Aktive Quests:"
+	quests_lbl.add_theme_font_size_override("font_size", 13)
+	inner.add_child(quests_lbl)
+
+	_dev_list = VBoxContainer.new()
+	_dev_list.name = "DevList"
+	_dev_list.add_theme_constant_override("separation", 4)
+	inner.add_child(_dev_list)
+
+
+func _refresh_dev_tab() -> void:
+	if _dev_list == null:
+		return
+
+	# Update rank label.
+	var rank_lbl := _dev_list.get_parent().get_parent().get_parent() \
+		.find_child("DevRankLabel", true, false) as Label
+	if rank_lbl:
+		var rank  : String = GuildRankManager.get_rank()
+		var pts   : int    = GuildRankManager.get_points()
+		var needed : int   = GuildRankManager.get_points_needed()
+		rank_lbl.text = "Rang: %s  |  Punkte: %d / %d" % [rank, pts, needed]
+
+	# Rebuild quest list.
+	for child in _dev_list.get_children():
+		child.queue_free()
+
+	var active : Array[Dictionary] = QuestManager.get_active_quests()
+	if active.is_empty():
+		var lbl := Label.new()
+		lbl.text = "Keine aktiven Quests."
+		lbl.add_theme_color_override("font_color", Color(0.55, 0.53, 0.50, 1.0))
+		lbl.add_theme_font_size_override("font_size", 13)
+		_dev_list.add_child(lbl)
+		return
+
+	for q : Dictionary in active:
+		var quest_id : String = q.get("title_key", "") as String
+		var row := HBoxContainer.new()
+		_dev_list.add_child(row)
+
+		var lbl := Label.new()
+		lbl.text = "[%s] %s" % [q.get("rank", "?"), tr(quest_id)]
+		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lbl.add_theme_font_size_override("font_size", 13)
+		row.add_child(lbl)
+
+		var btn := Button.new()
+		btn.text = "✓ Abschließen"
+		btn.custom_minimum_size = Vector2(140, 0)
+		btn.pressed.connect(func() -> void:
+			QuestManager.complete_quest(quest_id)
+		)
+		row.add_child(btn)

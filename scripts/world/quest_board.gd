@@ -3,28 +3,56 @@ extends Node3D
 
 const QUESTS : Array[Dictionary] = [
 	{
-		"rank": "E",
+		"source":     "board",
+		"rank":       "F",
+		"title_key":  "QUEST_GATHER_HERBS",
+		"giver_key":  "QUEST_GATHER_HERBS_GIVER",
+		"desc_key":   "QUEST_GATHER_HERBS_DESC",
+		"reward_key": "QUEST_GATHER_HERBS_REWARD",
+	},
+	{
+		"source":     "board",
+		"rank":       "F",
+		"title_key":  "QUEST_DELIVER_LETTER",
+		"giver_key":  "QUEST_DELIVER_LETTER_GIVER",
+		"desc_key":   "QUEST_DELIVER_LETTER_DESC",
+		"reward_key": "QUEST_DELIVER_LETTER_REWARD",
+	},
+	{
+		"source":     "board",
+		"rank":       "F",
+		"title_key":  "QUEST_SCARE_CROWS",
+		"giver_key":  "QUEST_SCARE_CROWS_GIVER",
+		"desc_key":   "QUEST_SCARE_CROWS_DESC",
+		"reward_key": "QUEST_SCARE_CROWS_REWARD",
+	},
+	{
+		"source":     "board",
+		"rank":       "E",
 		"title_key":  "QUEST_MISSING_SWORD",
 		"giver_key":  "QUEST_MISSING_SWORD_GIVER",
 		"desc_key":   "QUEST_MISSING_SWORD_DESC",
 		"reward_key": "QUEST_MISSING_SWORD_REWARD",
 	},
 	{
-		"rank": "E",
+		"source":     "board",
+		"rank":       "E",
 		"title_key":  "QUEST_CELLAR_RATS",
 		"giver_key":  "QUEST_CELLAR_RATS_GIVER",
 		"desc_key":   "QUEST_CELLAR_RATS_DESC",
 		"reward_key": "QUEST_CELLAR_RATS_REWARD",
 	},
 	{
-		"rank": "D",
+		"source":     "board",
+		"rank":       "D",
 		"title_key":  "QUEST_LOST_MERCHANT",
 		"giver_key":  "QUEST_LOST_MERCHANT_GIVER",
 		"desc_key":   "QUEST_LOST_MERCHANT_DESC",
 		"reward_key": "QUEST_LOST_MERCHANT_REWARD",
 	},
 	{
-		"rank": "C",
+		"source":     "board",
+		"rank":       "C",
 		"title_key":  "QUEST_ANCIENT_RUINS",
 		"giver_key":  "QUEST_ANCIENT_RUINS_GIVER",
 		"desc_key":   "QUEST_ANCIENT_RUINS_DESC",
@@ -84,6 +112,8 @@ func _on_quest_clicked(meta: Variant) -> void:
 	var quest_id : String = str(meta)
 	for q : Dictionary in QUESTS:
 		if q.get("title_key", "") == quest_id:
+			if not GuildRankManager.can_accept_quest_rank(q.get("rank", "F") as String):
+				return   # rank too low — link click ignored
 			if QuestManager.accept_quest(q):
 				_rebuild_board()
 			return
@@ -101,15 +131,17 @@ func _build_quest_bbcode() -> String:
 		var rank_str  : String = q.get("rank", "?") as String
 		var title     : String = tr(quest_id)
 
+		var rank_locked : bool = not GuildRankManager.can_accept_quest_rank(rank_str)
+
 		if is_done:
-			# Struck-through, dimmed
-			lines.append("[color=#556644][b][Rank %s]  %s  ✓[/b][/color]" % [rank_str, title])
+			lines.append("[color=#556644][b][Rang %s]  %s  ✓[/b][/color]" % [rank_str, title])
 		elif is_active:
-			# Highlighted — already accepted
-			lines.append("[color=#88cc55][b][Rank %s]  %s  ★[/b][/color]" % [rank_str, title])
+			lines.append("[color=#88cc55][b][Rang %s]  %s  ★[/b][/color]" % [rank_str, title])
+		elif rank_locked:
+			lines.append("[color=#664444][b][Rang %s]  %s  🔒[/b][/color]  [color=#775555][i]%s[/i][/color]" \
+				% [rank_str, title, tr("QUEST_RANK_LOCKED_FMT") % rank_str])
 		else:
-			# Clickable link to accept
-			lines.append("[color=#c8a84b][b][url=%s][Rank %s]  %s[/url][/b][/color]  [color=#aaaaaa][i](Klicken zum Annehmen)[/i][/color]" % [quest_id, rank_str, title])
+			lines.append("[color=#c8a84b][b][url=%s][Rang %s]  %s[/url][/b][/color]  [color=#aaaaaa][i](Klicken zum Annehmen)[/i][/color]" % [quest_id, rank_str, title])
 
 		lines.append("[color=#6b4f2a]  %s %s[/color]" % [tr("QUEST_POSTED_BY"), tr(q.get("giver_key", "") as String)])
 		lines.append("  %s" % tr(q.get("desc_key", "") as String))

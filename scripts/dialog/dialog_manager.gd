@@ -90,6 +90,10 @@ func show_node(node_id: String) -> void:
 		if not QuestManager.is_quest_active(quest_id) and not QuestManager.is_quest_completed(quest_id):
 			quest_offered.emit(give_quest as Dictionary)
 
+	# Collect all pending board quest rewards.
+	if node.get("collect_all_board_rewards", false):
+		QuestManager.mark_all_board_rewards_collected()
+
 	# Handle quest turn-in: check inventory, remove item, complete quest.
 	# If the player lacks the required item, redirect to the fail node instead.
 	var turn_in : Variant = node.get("turn_in_quest", null)

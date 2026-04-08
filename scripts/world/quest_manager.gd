@@ -1,6 +1,7 @@
 extends Node
 
 signal quests_changed
+signal quest_completed(quest: Dictionary)
 
 ## A quest Dictionary must contain:
 ##   "title_key"  : String  – translation key for the title
@@ -36,6 +37,7 @@ func complete_quest(quest_id: String) -> bool:
 			var q : Dictionary = _active_quests[i]
 			_active_quests.remove_at(i)
 			_completed_quests.append(q)
+			quest_completed.emit(q)
 			quests_changed.emit()
 			return true
 	return false
@@ -65,6 +67,35 @@ func get_completed_quests() -> Array[Dictionary]:
 
 func get_active_count() -> int:
 	return _active_quests.size()
+
+
+## Returns completed board quests whose reward has not yet been collected.
+func get_unrewarded_board_quests() -> Array[Dictionary]:
+	var result : Array[Dictionary] = []
+	for q : Dictionary in _completed_quests:
+		if q.get("source", "") == "board" and not q.get("rewarded", false):
+			result.append(q)
+	return result
+
+
+## Returns true if any completed board quest still has an uncollected reward.
+func has_uncollected_board_rewards() -> bool:
+	for q : Dictionary in _completed_quests:
+		if q.get("source", "") == "board" and not q.get("rewarded", false):
+			return true
+	return false
+
+
+## Marks all completed board quests as rewarded.
+func mark_all_board_rewards_collected() -> void:
+	var changed : bool = false
+	for i : int in _completed_quests.size():
+		if _completed_quests[i].get("source", "") == "board" \
+				and not _completed_quests[i].get("rewarded", false):
+			_completed_quests[i]["rewarded"] = true
+			changed = true
+	if changed:
+		quests_changed.emit()
 
 
 # ── Internal ──────────────────────────────────────────────────────────────────
