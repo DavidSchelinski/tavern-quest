@@ -1,0 +1,613 @@
+[gd_scene format=3 uid="uid://village001"]
+
+[ext_resource type="Script" path="res://scripts/npc/village_quest_npc.gd" id="1_script"]
+
+[sub_resource type="StandardMaterial3D" id="MAT_Stone"]
+albedo_color = Color(0.62, 0.58, 0.54, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="MAT_Wood"]
+albedo_color = Color(0.48, 0.32, 0.16, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="MAT_ThatchRoof"]
+albedo_color = Color(0.52, 0.40, 0.18, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="MAT_Road"]
+albedo_color = Color(0.46, 0.34, 0.20, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="MAT_Grass"]
+albedo_color = Color(0.25, 0.42, 0.16, 1)
+roughness = 1.0
+
+
+[sub_resource type="StandardMaterial3D" id="MAT_Trunk"]
+albedo_color = Color(0.38, 0.24, 0.10, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="MAT_Leaves"]
+albedo_color = Color(0.22, 0.46, 0.14, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="MAT_Bush"]
+albedo_color = Color(0.18, 0.40, 0.12, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="MAT_Tower"]
+albedo_color = Color(0.50, 0.46, 0.42, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="MAT_Skin"]
+albedo_color = Color(0.88, 0.72, 0.56, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="MAT_Herb"]
+albedo_color = Color(0.25, 0.52, 0.28, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="MAT_Torben"]
+albedo_color = Color(0.28, 0.38, 0.62, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="MAT_Heinrich"]
+albedo_color = Color(0.52, 0.40, 0.22, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="MAT_Aldric"]
+albedo_color = Color(0.28, 0.28, 0.32, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="MAT_Mara"]
+albedo_color = Color(0.62, 0.28, 0.22, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="MAT_Captain"]
+albedo_color = Color(0.25, 0.32, 0.48, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="MAT_Elara"]
+albedo_color = Color(0.45, 0.28, 0.55, 1)
+roughness = 0.85
+
+[sub_resource type="CapsuleMesh" id="NPC_Body"]
+radius = 0.38
+height = 1.65
+
+[sub_resource type="SphereMesh" id="NPC_Head"]
+radius = 0.28
+height = 0.56
+
+[node name="Village" type="Node3D"]
+
+[node name="Roads" type="Node3D" parent="."]
+
+[node name="MainRoad" type="CSGBox3D" parent="Roads"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 53)
+size = Vector3(5, 0.04, 50)
+use_collision = true
+material = SubResource("MAT_Road")
+
+[node name="VillagePlaza" type="CSGBox3D" parent="Roads"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 65)
+size = Vector3(36, 0.04, 26)
+use_collision = true
+material = SubResource("MAT_Road")
+
+[node name="SidePathEast" type="CSGBox3D" parent="Roads"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0.02, 72)
+size = Vector3(4, 0.04, 12)
+use_collision = true
+material = SubResource("MAT_Road")
+
+[node name="SidePathWest" type="CSGBox3D" parent="Roads"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.02, 68)
+size = Vector3(4, 0.04, 8)
+use_collision = true
+material = SubResource("MAT_Road")
+
+[node name="Buildings" type="Node3D" parent="."]
+
+[node name="HerbalistShop" type="Node3D" parent="Buildings"]
+
+[node name="Walls" type="CSGBox3D" parent="Buildings/HerbalistShop"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 1.5, 61)
+size = Vector3(5, 3, 4)
+use_collision = true
+material = SubResource("MAT_Stone")
+
+[node name="Roof" type="CSGBox3D" parent="Buildings/HerbalistShop"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 3.3, 61)
+size = Vector3(5.6, 0.6, 4.6)
+use_collision = false
+material = SubResource("MAT_ThatchRoof")
+
+[node name="RoofPeak" type="CSGBox3D" parent="Buildings/HerbalistShop"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 3.85, 61)
+size = Vector3(0.6, 1.1, 4.6)
+use_collision = false
+material = SubResource("MAT_ThatchRoof")
+
+[node name="TradingPost" type="Node3D" parent="Buildings"]
+
+[node name="Walls" type="CSGBox3D" parent="Buildings/TradingPost"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 1.5, 61)
+size = Vector3(6, 3, 5)
+use_collision = true
+material = SubResource("MAT_Wood")
+
+[node name="Roof" type="CSGBox3D" parent="Buildings/TradingPost"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 3.3, 61)
+size = Vector3(6.6, 0.6, 5.6)
+use_collision = false
+material = SubResource("MAT_ThatchRoof")
+
+[node name="RoofPeak" type="CSGBox3D" parent="Buildings/TradingPost"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 3.85, 61)
+size = Vector3(0.6, 1.1, 5.6)
+use_collision = false
+material = SubResource("MAT_ThatchRoof")
+
+[node name="Inn" type="Node3D" parent="Buildings"]
+
+[node name="Walls" type="CSGBox3D" parent="Buildings/Inn"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 72)
+size = Vector3(9, 5, 7)
+use_collision = true
+material = SubResource("MAT_Stone")
+
+[node name="Roof" type="CSGBox3D" parent="Buildings/Inn"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.35, 72)
+size = Vector3(9.6, 0.7, 7.6)
+use_collision = false
+material = SubResource("MAT_ThatchRoof")
+
+[node name="RoofPeak" type="CSGBox3D" parent="Buildings/Inn"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.05, 72)
+size = Vector3(0.7, 1.4, 7.6)
+use_collision = false
+material = SubResource("MAT_ThatchRoof")
+
+[node name="Porch" type="CSGBox3D" parent="Buildings/Inn"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 68.2)
+size = Vector3(5, 1, 1)
+use_collision = true
+material = SubResource("MAT_Wood")
+
+[node name="Sign" type="CSGBox3D" parent="Buildings/Inn"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 68.45)
+size = Vector3(3.5, 1.0, 0.12)
+use_collision = false
+material = SubResource("MAT_Wood")
+
+[node name="Blacksmith" type="Node3D" parent="Buildings"]
+
+[node name="Walls" type="CSGBox3D" parent="Buildings/Blacksmith"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1.5, 69)
+size = Vector3(5, 3, 4)
+use_collision = true
+material = SubResource("MAT_Tower")
+
+[node name="Roof" type="CSGBox3D" parent="Buildings/Blacksmith"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 3.3, 69)
+size = Vector3(5.6, 0.6, 4.6)
+use_collision = false
+material = SubResource("MAT_ThatchRoof")
+
+[node name="Chimney" type="CSGBox3D" parent="Buildings/Blacksmith"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 5.0, 68.5)
+size = Vector3(1, 4, 1)
+use_collision = false
+material = SubResource("MAT_Tower")
+
+[node name="Farm" type="Node3D" parent="Buildings"]
+
+[node name="Walls" type="CSGBox3D" parent="Buildings/Farm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.25, 73)
+size = Vector3(8, 2.5, 7)
+use_collision = true
+material = SubResource("MAT_Wood")
+
+[node name="Roof" type="CSGBox3D" parent="Buildings/Farm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 2.75, 73)
+size = Vector3(8.6, 0.6, 7.6)
+use_collision = false
+material = SubResource("MAT_ThatchRoof")
+
+[node name="RoofPeak" type="CSGBox3D" parent="Buildings/Farm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 3.2, 73)
+size = Vector3(0.6, 0.9, 7.6)
+use_collision = false
+material = SubResource("MAT_ThatchRoof")
+
+[node name="FarmFence1" type="CSGBox3D" parent="Buildings/Farm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.5, 73)
+size = Vector3(0.15, 1, 8)
+use_collision = true
+material = SubResource("MAT_Wood")
+
+[node name="FarmFence2" type="CSGBox3D" parent="Buildings/Farm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0.5, 77)
+size = Vector3(8, 1, 0.15)
+use_collision = true
+material = SubResource("MAT_Wood")
+
+[node name="GuardPost" type="Node3D" parent="Buildings"]
+
+[node name="Walls" type="CSGBox3D" parent="Buildings/GuardPost"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 43)
+size = Vector3(4, 3, 4)
+use_collision = true
+material = SubResource("MAT_Stone")
+
+[node name="Roof" type="CSGBox3D" parent="Buildings/GuardPost"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.3, 43)
+size = Vector3(4.6, 0.6, 4.6)
+use_collision = false
+material = SubResource("MAT_ThatchRoof")
+
+[node name="ScholarTower" type="Node3D" parent="Buildings"]
+
+[node name="Walls" type="CSGBox3D" parent="Buildings/ScholarTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 4, 78)
+size = Vector3(4, 8, 4)
+use_collision = true
+material = SubResource("MAT_Tower")
+
+[node name="Battlements" type="CSGBox3D" parent="Buildings/ScholarTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 8.5, 78)
+size = Vector3(5, 1, 5)
+use_collision = false
+material = SubResource("MAT_Tower")
+
+[node name="TowerBase" type="CSGBox3D" parent="Buildings/ScholarTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0.3, 78)
+size = Vector3(5.5, 0.6, 5.5)
+use_collision = true
+material = SubResource("MAT_Tower")
+
+[node name="Vegetation" type="Node3D" parent="."]
+
+[node name="Tree01" type="Node3D" parent="Vegetation"]
+
+[node name="Trunk" type="CSGCylinder3D" parent="Vegetation/Tree01"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 1.0, 35)
+radius = 0.32
+height = 2.0
+use_collision = true
+material = SubResource("MAT_Trunk")
+
+[node name="Foliage" type="CSGSphere3D" parent="Vegetation/Tree01"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 3.3, 35)
+radius = 1.9
+material = SubResource("MAT_Leaves")
+
+[node name="Tree02" type="Node3D" parent="Vegetation"]
+
+[node name="Trunk" type="CSGCylinder3D" parent="Vegetation/Tree02"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 1.1, 34)
+radius = 0.28
+height = 2.2
+use_collision = true
+material = SubResource("MAT_Trunk")
+
+[node name="Foliage" type="CSGSphere3D" parent="Vegetation/Tree02"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 3.5, 34)
+radius = 1.7
+material = SubResource("MAT_Leaves")
+
+[node name="Tree03" type="Node3D" parent="Vegetation"]
+
+[node name="Trunk" type="CSGCylinder3D" parent="Vegetation/Tree03"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 1.0, 46)
+radius = 0.35
+height = 2.4
+use_collision = true
+material = SubResource("MAT_Trunk")
+
+[node name="Foliage" type="CSGSphere3D" parent="Vegetation/Tree03"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 3.8, 46)
+radius = 2.1
+material = SubResource("MAT_Leaves")
+
+[node name="Tree04" type="Node3D" parent="Vegetation"]
+
+[node name="Trunk" type="CSGCylinder3D" parent="Vegetation/Tree04"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 1.0, 47)
+radius = 0.30
+height = 2.1
+use_collision = true
+material = SubResource("MAT_Trunk")
+
+[node name="Foliage" type="CSGSphere3D" parent="Vegetation/Tree04"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 3.4, 47)
+radius = 1.85
+material = SubResource("MAT_Leaves")
+
+[node name="Tree05" type="Node3D" parent="Vegetation"]
+
+[node name="Trunk" type="CSGCylinder3D" parent="Vegetation/Tree05"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 1.0, 58)
+radius = 0.33
+height = 2.3
+use_collision = true
+material = SubResource("MAT_Trunk")
+
+[node name="Foliage" type="CSGSphere3D" parent="Vegetation/Tree05"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 3.7, 58)
+radius = 2.0
+material = SubResource("MAT_Leaves")
+
+[node name="Tree06" type="Node3D" parent="Vegetation"]
+
+[node name="Trunk" type="CSGCylinder3D" parent="Vegetation/Tree06"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 1.0, 57)
+radius = 0.29
+height = 2.0
+use_collision = true
+material = SubResource("MAT_Trunk")
+
+[node name="Foliage" type="CSGSphere3D" parent="Vegetation/Tree06"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 3.2, 57)
+radius = 1.75
+material = SubResource("MAT_Leaves")
+
+[node name="Tree07" type="Node3D" parent="Vegetation"]
+
+[node name="Trunk" type="CSGCylinder3D" parent="Vegetation/Tree07"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 1.0, 69)
+radius = 0.36
+height = 2.5
+use_collision = true
+material = SubResource("MAT_Trunk")
+
+[node name="Foliage" type="CSGSphere3D" parent="Vegetation/Tree07"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 4.0, 69)
+radius = 2.2
+material = SubResource("MAT_Leaves")
+
+[node name="Tree08" type="Node3D" parent="Vegetation"]
+
+[node name="Trunk" type="CSGCylinder3D" parent="Vegetation/Tree08"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 1.0, 70)
+radius = 0.31
+height = 2.2
+use_collision = true
+material = SubResource("MAT_Trunk")
+
+[node name="Foliage" type="CSGSphere3D" parent="Vegetation/Tree08"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 3.5, 70)
+radius = 1.9
+material = SubResource("MAT_Leaves")
+
+[node name="Tree09" type="Node3D" parent="Vegetation"]
+
+[node name="Trunk" type="CSGCylinder3D" parent="Vegetation/Tree09"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 1.0, 82)
+radius = 0.34
+height = 2.3
+use_collision = true
+material = SubResource("MAT_Trunk")
+
+[node name="Foliage" type="CSGSphere3D" parent="Vegetation/Tree09"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 3.8, 82)
+radius = 2.05
+material = SubResource("MAT_Leaves")
+
+[node name="Tree10" type="Node3D" parent="Vegetation"]
+
+[node name="Trunk" type="CSGCylinder3D" parent="Vegetation/Tree10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 1.0, 84)
+radius = 0.30
+height = 2.0
+use_collision = true
+material = SubResource("MAT_Trunk")
+
+[node name="Foliage" type="CSGSphere3D" parent="Vegetation/Tree10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 3.2, 84)
+radius = 1.8
+material = SubResource("MAT_Leaves")
+
+[node name="Bush01" type="CSGSphere3D" parent="Vegetation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.55, 48)
+radius = 0.6
+material = SubResource("MAT_Bush")
+
+[node name="Bush02" type="CSGSphere3D" parent="Vegetation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0.5, 49)
+radius = 0.52
+material = SubResource("MAT_Bush")
+
+[node name="Bush03" type="CSGSphere3D" parent="Vegetation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.5, 59)
+radius = 0.58
+material = SubResource("MAT_Bush")
+
+[node name="Bush04" type="CSGSphere3D" parent="Vegetation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.48, 60)
+radius = 0.5
+material = SubResource("MAT_Bush")
+
+[node name="Bush05" type="CSGSphere3D" parent="Vegetation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.52, 70)
+radius = 0.55
+material = SubResource("MAT_Bush")
+
+[node name="Bush06" type="CSGSphere3D" parent="Vegetation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0.5, 71)
+radius = 0.48
+material = SubResource("MAT_Bush")
+
+[node name="Decorations" type="Node3D" parent="."]
+
+[node name="Well" type="Node3D" parent="Decorations"]
+
+[node name="WellBase" type="CSGCylinder3D" parent="Decorations/Well"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 65)
+radius = 0.9
+height = 1.1
+use_collision = true
+material = SubResource("MAT_Stone")
+
+[node name="WellInner" type="CSGCylinder3D" parent="Decorations/Well"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 65)
+radius = 0.55
+height = 0.8
+use_collision = false
+operation = 2
+material = SubResource("MAT_Grass")
+
+[node name="WellBeam" type="CSGBox3D" parent="Decorations/Well"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 65)
+size = Vector3(0.12, 1.4, 2.2)
+use_collision = false
+material = SubResource("MAT_Wood")
+
+[node name="WellCross" type="CSGBox3D" parent="Decorations/Well"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 65)
+size = Vector3(2.2, 0.12, 0.12)
+use_collision = false
+material = SubResource("MAT_Wood")
+
+[node name="NPCs" type="Node3D" parent="."]
+
+[node name="Herbalist" type="Node3D" parent="NPCs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.9, 57)
+script = ExtResource("1_script")
+quest_title_key = "QUEST_GATHER_HERBS"
+speaker_key = "NPC_HERBALIST"
+greet_key = "HERBALIST_GREET"
+context_key = "HERBALIST_CONTEXT"
+active_key = "HERBALIST_ACTIVE"
+turnin_key = "HERBALIST_TURNIN"
+done_key = "HERBALIST_DONE"
+
+[node name="Body" type="MeshInstance3D" parent="NPCs/Herbalist"]
+mesh = SubResource("NPC_Body")
+surface_material_override/0 = SubResource("MAT_Herb")
+
+[node name="Head" type="MeshInstance3D" parent="NPCs/Herbalist"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+mesh = SubResource("NPC_Head")
+surface_material_override/0 = SubResource("MAT_Skin")
+
+[node name="MerchantTorben" type="Node3D" parent="NPCs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.9, 57)
+script = ExtResource("1_script")
+quest_title_key = "QUEST_DELIVER_LETTER"
+speaker_key = "NPC_MERCHANT_TORBEN"
+greet_key = "TORBEN_GREET"
+context_key = "TORBEN_CONTEXT"
+active_key = "TORBEN_ACTIVE"
+turnin_key = "TORBEN_TURNIN"
+done_key = "TORBEN_DONE"
+
+[node name="Body" type="MeshInstance3D" parent="NPCs/MerchantTorben"]
+mesh = SubResource("NPC_Body")
+surface_material_override/0 = SubResource("MAT_Torben")
+
+[node name="Head" type="MeshInstance3D" parent="NPCs/MerchantTorben"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+mesh = SubResource("NPC_Head")
+surface_material_override/0 = SubResource("MAT_Skin")
+
+[node name="FarmerHeinrich" type="Node3D" parent="NPCs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.9, 68)
+script = ExtResource("1_script")
+quest_title_key = "QUEST_SCARE_CROWS"
+speaker_key = "NPC_FARMER_HEINRICH"
+greet_key = "FARMER_GREET"
+context_key = "FARMER_CONTEXT"
+active_key = "FARMER_ACTIVE"
+turnin_key = "FARMER_TURNIN"
+done_key = "FARMER_DONE"
+
+[node name="Body" type="MeshInstance3D" parent="NPCs/FarmerHeinrich"]
+mesh = SubResource("NPC_Body")
+surface_material_override/0 = SubResource("MAT_Heinrich")
+
+[node name="Head" type="MeshInstance3D" parent="NPCs/FarmerHeinrich"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+mesh = SubResource("NPC_Head")
+surface_material_override/0 = SubResource("MAT_Skin")
+
+[node name="BlacksmithAldric" type="Node3D" parent="NPCs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.9, 65)
+script = ExtResource("1_script")
+quest_title_key = "QUEST_MISSING_SWORD"
+speaker_key = "NPC_BLACKSMITH_ALDRIC"
+greet_key = "BLACKSMITH_GREET"
+context_key = "BLACKSMITH_CONTEXT"
+active_key = "BLACKSMITH_ACTIVE"
+turnin_key = "BLACKSMITH_TURNIN"
+done_key = "BLACKSMITH_DONE"
+
+[node name="Body" type="MeshInstance3D" parent="NPCs/BlacksmithAldric"]
+mesh = SubResource("NPC_Body")
+surface_material_override/0 = SubResource("MAT_Aldric")
+
+[node name="Head" type="MeshInstance3D" parent="NPCs/BlacksmithAldric"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+mesh = SubResource("NPC_Head")
+surface_material_override/0 = SubResource("MAT_Skin")
+
+[node name="InnkeeperMara" type="Node3D" parent="NPCs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 68)
+script = ExtResource("1_script")
+quest_title_key = "QUEST_CELLAR_RATS"
+speaker_key = "NPC_INNKEEPER_MARA"
+greet_key = "INNKEEPER_GREET"
+context_key = "INNKEEPER_CONTEXT"
+active_key = "INNKEEPER_ACTIVE"
+turnin_key = "INNKEEPER_TURNIN"
+done_key = "INNKEEPER_DONE"
+
+[node name="Body" type="MeshInstance3D" parent="NPCs/InnkeeperMara"]
+mesh = SubResource("NPC_Body")
+surface_material_override/0 = SubResource("MAT_Mara")
+
+[node name="Head" type="MeshInstance3D" parent="NPCs/InnkeeperMara"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+mesh = SubResource("NPC_Head")
+surface_material_override/0 = SubResource("MAT_Skin")
+
+[node name="GuardCaptain" type="Node3D" parent="NPCs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 40)
+script = ExtResource("1_script")
+quest_title_key = "QUEST_LOST_MERCHANT"
+speaker_key = "NPC_GUARD_CAPTAIN"
+greet_key = "GUARD_GREET"
+context_key = "GUARD_CONTEXT"
+active_key = "GUARD_ACTIVE"
+turnin_key = "GUARD_TURNIN"
+done_key = "GUARD_DONE"
+
+[node name="Body" type="MeshInstance3D" parent="NPCs/GuardCaptain"]
+mesh = SubResource("NPC_Body")
+surface_material_override/0 = SubResource("MAT_Captain")
+
+[node name="Head" type="MeshInstance3D" parent="NPCs/GuardCaptain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+mesh = SubResource("NPC_Head")
+surface_material_override/0 = SubResource("MAT_Skin")
+
+[node name="ScholarElara" type="Node3D" parent="NPCs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0.9, 74)
+script = ExtResource("1_script")
+quest_title_key = "QUEST_ANCIENT_RUINS"
+speaker_key = "NPC_SCHOLAR_ELARA"
+greet_key = "SCHOLAR_GREET"
+context_key = "SCHOLAR_CONTEXT"
+active_key = "SCHOLAR_ACTIVE"
+turnin_key = "SCHOLAR_TURNIN"
+done_key = "SCHOLAR_DONE"
+
+[node name="Body" type="MeshInstance3D" parent="NPCs/ScholarElara"]
+mesh = SubResource("NPC_Body")
+surface_material_override/0 = SubResource("MAT_Elara")
+
+[node name="Head" type="MeshInstance3D" parent="NPCs/ScholarElara"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+mesh = SubResource("NPC_Head")
+surface_material_override/0 = SubResource("MAT_Skin")

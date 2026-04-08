@@ -101,8 +101,10 @@ func show_node(node_id: String) -> void:
 		var quest_id : String = (turn_in as Dictionary).get("quest_id", "")
 		var item_id  : String = (turn_in as Dictionary).get("item_id", "")
 		var fail_node : String = (turn_in as Dictionary).get("fail", "")
-		if QuestManager.is_quest_active(quest_id) and InventoryManager.has_item(item_id):
-			InventoryManager.remove_item_by_id(item_id, 1)
+		var needs_item : bool = not item_id.is_empty()
+		if QuestManager.is_quest_active(quest_id) and (not needs_item or InventoryManager.has_item(item_id)):
+			if needs_item:
+				InventoryManager.remove_item_by_id(item_id, 1)
 			QuestManager.complete_quest(quest_id)
 		elif not fail_node.is_empty():
 			show_node(fail_node)
