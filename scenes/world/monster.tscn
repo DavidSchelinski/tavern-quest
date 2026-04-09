@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://monster001"]
+
+[ext_resource type="Script" uid="uid://d5h2ypvqhenf" path="res://scripts/world/monster.gd" id="1_script"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_M01"]
+height = 1.2
+
+[node name="Monster" type="CharacterBody3D" unique_id=771061720 groups=["monster"]]
+collision_layer = 4
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1883933276]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("CapsuleShape3D_M01")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=295331861]
+path_desired_distance = 0.5
+target_desired_distance = 0.8
+avoidance_enabled = true
