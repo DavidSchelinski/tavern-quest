@@ -127,3 +127,30 @@ drop_item = ExtResource("9_coin")
 [node name="WolfMonster" parent="." unique_id=2100000005 instance=ExtResource("15_monster")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.5, 33)
 mesh_rotation_y_deg = 180.0
+
+[node name="RatMonster1" parent="." unique_id=2100000010 instance=ExtResource("15_monster")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.5, 4)
+mesh_path = "res://assets/models/monsters/rat/rat.fbx"
+anim_path = "res://assets/models/monsters/rat/anims/rat-anims.fbx"
+mesh_rotation_y_deg = 180.0
+max_health = 15.0
+move_speed = 2.2
+wander_radius = 5.0
+
+[node name="RatMonster2" parent="." unique_id=2100000011 instance=ExtResource("15_monster")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0.5, -3)
+mesh_path = "res://assets/models/monsters/rat/rat.fbx"
+anim_path = "res://assets/models/monsters/rat/anims/rat-anims.fbx"
+mesh_rotation_y_deg = 180.0
+max_health = 15.0
+move_speed = 2.2
+wander_radius = 5.0
+
+[node name="RatMonster3" parent="." unique_id=2100000012 instance=ExtResource("15_monster")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0.5, 1)
+mesh_path = "res://assets/models/monsters/rat/rat.fbx"
+anim_path = "res://assets/models/monsters/rat/anims/rat-anims.fbx"
+mesh_rotation_y_deg = 180.0
+max_health = 15.0
+move_speed = 2.2
+wander_radius = 5.0

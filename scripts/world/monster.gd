@@ -5,21 +5,27 @@ extends CharacterBody3D
 # and takes damage. Uses NavigationAgent3D when a navmesh is available
 # and falls back to walking straight toward the wander target otherwise.
 
-const MAX_HEALTH    : float = 50.0
-const MOVE_SPEED    : float = 1.8
-const GRAVITY       : float = 20.0
-const WANDER_RADIUS : float = 8.0
-const RESPAWN_TIME  : float = 10.0
+const GRAVITY      : float = 20.0
+const RESPAWN_TIME : float = 10.0
 
-@export var mesh_scene       : PackedScene = null
-@export var mesh_scale       : float       = 1.0
-@export var mesh_offset      : Vector3     = Vector3.ZERO
+@export_file("*.fbx", "*.glb", "*.gltf", "*.tscn", "*.scn") var mesh_path : String = "res://assets/models/monsters/wolf/wolf.fbx"
+@export_file("*.fbx", "*.res") var anim_path : String = "res://assets/models/monsters/wolf/anims/wolf-anims.fbx"
+@export var mesh_scale       : float   = 1.0
+@export var mesh_offset      : Vector3 = Vector3.ZERO
 @export_range(-180.0, 180.0, 1.0) var mesh_rotation_y_deg : float = 0.0
+@export var max_health       : float   = 50.0
+@export var move_speed       : float   = 1.8
+@export var wander_radius    : float   = 8.0
+## Optional explicit animation names (must exist in the anim library).
+## When empty, the script picks one by keyword match.
+@export var walk_anim_name   : String  = ""
+@export var idle_anim_name   : String  = ""
+@export var anim_blend_time  : float   = 0.35
 
 @onready var _col : CollisionShape3D  = $CollisionShape3D
 @onready var _nav : NavigationAgent3D = $NavigationAgent3D
 
-var health       : float = MAX_HEALTH
+var health       : float = 50.0
 var _home_pos    : Vector3
 var _wander_pos  : Vector3
 var _idle_timer  : float = 1.0
@@ -35,17 +41,18 @@ var _state : State = State.IDLE
 
 func _ready() -> void:
 	add_to_group("monster")
+	health      = max_health
 	_home_pos   = global_position
 	_wander_pos = global_position
 	_spawn_mesh()
 
 
 func _spawn_mesh() -> void:
-	# Default to the wolf FBX if no mesh scene was assigned in the inspector.
-	var scene := mesh_scene
+	if mesh_path == "":
+		return
+	var scene := load(mesh_path) as PackedScene
 	if scene == null:
-		scene = load("res://assets/models/monsters/wolf/wolf.fbx") as PackedScene
-	if scene == null:
+		push_warning("[Monster] failed to load mesh scene at " + mesh_path)
 		return
 	var inst := scene.instantiate() as Node3D
 	if inst == null:
@@ -59,36 +66,74 @@ func _spawn_mesh() -> void:
 
 
 func _setup_animation() -> void:
-	if _mesh_root == null:
+	if _mesh_root == null or anim_path == "":
 		return
 	_anim_player = _find_animation_player(_mesh_root)
 	if _anim_player == null:
-		# Wolf FBX has no AnimationPlayer — create one so we can host the
-		# external walk animation library on it.
+		# Source FBX has no AnimationPlayer — create one so we can host
+		# the external animation library on it.
 		_anim_player = AnimationPlayer.new()
 		_anim_player.name = "AnimationPlayer"
 		_mesh_root.add_child(_anim_player)
 
-	_walk_anim = _register_anim_lib(&"wolf_walk",
-		"res://assets/models/monsters/wolf/anims/walk.fbx")
-	_idle_anim = _register_anim_lib(&"wolf_idle",
-		"res://assets/models/monsters/wolf/anims/idle.fbx")
-
-
-func _register_anim_lib(lib_name: StringName, path: String) -> StringName:
-	var lib := load(path) as AnimationLibrary
+	var lib := load(anim_path) as AnimationLibrary
 	if lib == null:
-		return &""
+		push_warning("[Monster] failed to load animation library at " + anim_path)
+		return
+	# Unique library name per source file so multiple monsters don't collide.
+	var lib_name := StringName(anim_path.get_file().get_basename())
 	if _anim_player.has_animation_library(lib_name):
 		_anim_player.remove_animation_library(lib_name)
 	_anim_player.add_animation_library(lib_name, lib)
+
+	_walk_anim = _resolve_anim(lib, lib_name, walk_anim_name, "walk", &"")
+	_idle_anim = _resolve_anim(lib, lib_name, idle_anim_name, "idle", _walk_anim)
+	if _idle_anim == &"":
+		push_warning("[Monster] no real idle animation found in " + anim_path
+			+ " — rat-style rigs need a dedicated idle action exported from Blender")
+
+
+const MIN_ANIM_LENGTH : float = 0.1
+
+## Resolve an animation from a library by (in order):
+##   1) an explicit name provided in the inspector
+##   2) a keyword match (e.g. "idle" / "walk"), skipping stub clips
+##   3) any non-stub animation that isn't `exclude` (idle fallback when the
+##      rig only ships a walk clip and no dedicated idle).
+func _resolve_anim(lib: AnimationLibrary, lib_name: StringName,
+		explicit: String, keyword: String, exclude: StringName) -> StringName:
 	var names := lib.get_animation_list()
-	if names.size() == 0:
-		return &""
-	var anim := lib.get_animation(names[0])
+
+	if explicit != "":
+		for n in names:
+			if String(n) == explicit:
+				return _finalize_anim(lib, lib_name, n)
+
+	var key := keyword.to_lower()
+	for n in names:
+		if String(n).to_lower().contains(key) and _is_real_anim(lib, n):
+			return _finalize_anim(lib, lib_name, n)
+
+	for n in names:
+		if not _is_real_anim(lib, n):
+			continue
+		var full := StringName(String(lib_name) + "/" + String(n))
+		if full != exclude:
+			return _finalize_anim(lib, lib_name, n)
+
+	return &""
+
+
+func _is_real_anim(lib: AnimationLibrary, anim_name: StringName) -> bool:
+	var anim := lib.get_animation(anim_name)
+	return anim != null and anim.length >= MIN_ANIM_LENGTH and anim.get_track_count() > 0
+
+
+func _finalize_anim(lib: AnimationLibrary, lib_name: StringName, anim_name: StringName) -> StringName:
+	var anim := lib.get_animation(anim_name)
 	if anim != null:
 		anim.loop_mode = Animation.LOOP_LINEAR
-	return StringName(String(lib_name) + "/" + String(names[0]))
+	return StringName(String(lib_name) + "/" + String(anim_name))
 
 
 func _find_animation_player(node: Node) -> AnimationPlayer:
@@ -107,9 +152,13 @@ func _update_anim() -> void:
 	var moving := _state == State.WANDER and Vector2(velocity.x, velocity.z).length() > 0.1
 	var target : StringName = _walk_anim if moving else _idle_anim
 	if target == &"":
+		# No animation to switch to — fade the current clip out so we don't
+		# keep walking in place when the monster has no idle clip.
+		if _anim_player.is_playing():
+			_anim_player.stop()
 		return
 	if _anim_player.current_animation != String(target):
-		_anim_player.play(target)
+		_anim_player.play(target, anim_blend_time)
 
 
 func _physics_process(delta: float) -> void:
@@ -157,14 +206,14 @@ func _tick_wander(_delta: float) -> void:
 		dir = Vector3(_wander_pos.x - global_position.x, 0.0, _wander_pos.z - global_position.z)
 	if dir.length_squared() > 0.001:
 		dir        = dir.normalized()
-		velocity.x = dir.x * MOVE_SPEED
-		velocity.z = dir.z * MOVE_SPEED
+		velocity.x = dir.x * move_speed
+		velocity.z = dir.z * move_speed
 		_face_dir(dir, 0.12)
 
 
 func _pick_wander_target() -> void:
 	var angle  := randf() * TAU
-	var radius := randf_range(2.0, WANDER_RADIUS)
+	var radius := randf_range(2.0, wander_radius)
 	_wander_pos = _home_pos + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
 	_nav.set_target_position(_wander_pos)
 
@@ -202,7 +251,7 @@ func _die() -> void:
 func _respawn() -> void:
 	_dead           = false
 	_state          = State.IDLE
-	health          = MAX_HEALTH
+	health          = max_health
 	_idle_timer     = 1.0
 	visible         = true
 	global_position = _home_pos

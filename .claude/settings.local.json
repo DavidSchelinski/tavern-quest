@@ -23,7 +23,11 @@
       "Bash(grep -E \"^[A-Z][a-zA-Z_0-9]{2,40}$\")",
       "mcp__godot__get_uid",
       "Bash(xxd \"C:/Users/konst/tavern-quest/scripts/inventory/inventory_manager.gd\")",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(rm assets/models/monsters/wolf/anims/idle.fbx assets/models/monsters/wolf/anims/idle.fbx.import)",
+      "Bash(mv assets/models/monsters/wolf/anims/walk.fbx assets/models/monsters/wolf/anims/wolf-anims.fbx)",
+      "Bash(mv assets/models/monsters/wolf/anims/walk.fbx.import assets/models/monsters/wolf/anims/wolf-anims.fbx.import)",
+      "mcp__godot__launch_editor"
     ]
   }
 }
