@@ -69,9 +69,16 @@ var _sword_hitbox : Area3D = null
 var net_anim   : int = 0
 var net_combat : int = 0
 
+# ── Health & Stamina ──────────────────────────────────────────────────────────
+const MAX_STAMINA : float = 100.0
+var health   : float = 0.0          # initialised in _ready via CharacterStats
+var _stamina : float = MAX_STAMINA
+var _hud     : CanvasLayer = null
+
 
 func _ready() -> void:
 	add_to_group("player")
+	health = CharacterStats.get_max_hp()
 	if not multiplayer.has_multiplayer_peer():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		camera.current = true
@@ -81,6 +88,7 @@ func _ready() -> void:
 	_setup_dialog_ui.call_deferred()
 	_setup_inventory_ui.call_deferred()
 	_setup_combat.call_deferred()
+	_setup_hud.call_deferred()
 
 
 # ── Multiplayer authority ─────────────────────────────────────────────────────
@@ -403,10 +411,19 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("jump") and on_floor and not is_attacking:
 		velocity.y = JUMP_VELOCITY
 
-	var sprinting  : bool    = Input.is_action_pressed("sprint")
-	var speed      : float   = (SPRINT_SPEED if sprinting else WALK_SPEED) \
-							   * CharacterStats.get_speed_multiplier()
-	var input_dir  : Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var sprinting : bool    = Input.is_action_pressed("sprint")
+	var input_dir : Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+
+	# Stamina: drain while sprinting and moving, regenerate otherwise
+	if sprinting and input_dir != Vector2.ZERO:
+		_stamina = maxf(0.0, _stamina - 20.0 * delta)
+		if _stamina == 0.0:
+			sprinting = false   # force walk when exhausted
+	else:
+		_stamina = minf(MAX_STAMINA, _stamina + 15.0 * delta)
+
+	var speed : float = (SPRINT_SPEED if sprinting else WALK_SPEED) \
+						* CharacterStats.get_speed_multiplier()
 
 	var direction : Vector3 = Vector3.ZERO
 	if input_dir != Vector2.ZERO:
@@ -597,3 +614,29 @@ func exit_board_view() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	if _current_interactable and _current_interactable.has_method("on_interact_exit"):
 		_current_interactable.on_interact_exit()
+
+
+# ── Health & Damage ───────────────────────────────────────────────────────────
+
+@rpc("any_peer", "call_local", "reliable")
+func take_damage(amount: float) -> void:
+	if not _is_mine():
+		return
+	var reduction : float = CharacterStats.get_damage_reduction()
+	var actual    : float = amount * (1.0 - reduction)
+	health = maxf(0.0, health - actual)
+	if _hud != null and _hud.has_method("flash_damage"):
+		_hud.flash_damage()
+	# TODO: handle death (health <= 0) when a respawn system is added
+
+
+# ── HUD ───────────────────────────────────────────────────────────────────────
+
+func _setup_hud() -> void:
+	if not _is_mine():
+		return
+	var hud_script := load("res://scripts/ui/hud.gd")
+	_hud = CanvasLayer.new()
+	_hud.set_script(hud_script)
+	add_child(_hud)
+	_hud.set_player(self)

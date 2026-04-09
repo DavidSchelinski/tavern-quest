@@ -689,6 +689,19 @@ func _build_character_page(page: Control, panel_w: float, _page_h: float) -> voi
 		_build_derived_row(page, def[0], def[1], p, y, panel_w - p * 2)
 		y += 24
 
+	y += 4
+	page.add_child(_make_hsep(p, y, panel_w - p * 2))
+	y += 10
+	page.add_child(_make_section_label("Aktueller Status", p, y, panel_w - p * 2))
+	y += 24
+	var status_defs : Array[Array] = [
+		["Aktuelle HP",  "current_hp"],
+		["Ausdauer",     "current_stamina"],
+	]
+	for def in status_defs:
+		_build_derived_row(page, def[0], def[1], p, y, panel_w - p * 2)
+		y += 24
+
 
 func _build_stat_row(parent: Control, stat: String,
 					  x: float, y: float, w: float, h: float) -> void:
@@ -844,6 +857,18 @@ func _refresh_character_page() -> void:
 	_derived_labels["dmg_red" ].text = ("-%d %%" % red_pct) if red_pct > 0 else "–"
 	_derived_labels["speed"   ].text = ("+%d %%" % spd_pct) if spd_pct > 0 else "–"
 	_derived_labels["atk_speed"].text = ("+%d %%" % atk_pct) if atk_pct > 0 else "–"
+
+	# Current status – read live values from player reference
+	if _derived_labels.has("current_hp"):
+		var hp_val = _player_ref.get("health") if _player_ref else null
+		var cur_hp : float = float(hp_val) if hp_val != null else float(max_hp)
+		_derived_labels["current_hp"].text = "%d / %d" % [int(cur_hp), max_hp]
+	if _derived_labels.has("current_stamina"):
+		var sta_val  = _player_ref.get("_stamina") if _player_ref else null
+		var max_sta  = _player_ref.get("MAX_STAMINA") if _player_ref else null
+		var cur_sta  : float = float(sta_val) if sta_val != null else 100.0
+		var max_sta_f: float = float(max_sta) if max_sta != null else 100.0
+		_derived_labels["current_stamina"].text = "%d / %d" % [int(cur_sta), int(max_sta_f)]
 
 
 # ──────────────────────────────────────────────────────────────────────────────
