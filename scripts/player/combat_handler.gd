@@ -239,6 +239,11 @@ func _do_damage(body: Node3D) -> void:
 		body.take_damage.rpc_id(1, dmg)
 	else:
 		body.take_damage(dmg)
+	# Camera shake — heavy hits shake more than light hits.
+	var cam : Camera3D = _player.get_node_or_null("CameraYaw/SpringArm3D/Camera3D")
+	if cam != null and cam.has_method("apply_shake"):
+		var shake : float = 0.1 if dmg > 18.0 else 0.8
+		cam.apply_shake(shake)
 
 
 func _reset() -> void:
