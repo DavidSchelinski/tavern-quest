@@ -63,7 +63,7 @@ func _process(_delta: float) -> void:
 	if _player == null:
 		return
 
-	var max_hp  : float = CharacterStats.get_max_hp()
+	var max_hp  : float = _player.get_node("Stats").get_max_hp()
 	var hp_val          = _player.get("health")
 	var sta_val         = _player.get("_stamina")
 

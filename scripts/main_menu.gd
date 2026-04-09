@@ -499,7 +499,7 @@ func _apply_keybind(action: String, physical_keycode: int) -> void:
 		if ev is InputEventKey:
 			InputMap.action_erase_event(action, ev)
 	var ev := InputEventKey.new()
-	ev.physical_keycode = physical_keycode
+	ev.physical_keycode = physical_keycode as Key
 	InputMap.action_add_event(action, ev)
 
 

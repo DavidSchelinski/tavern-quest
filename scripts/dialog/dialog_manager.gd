@@ -26,6 +26,7 @@ signal quest_offered(quest: Dictionary)
 var _current_npc   : Node3D    = null
 var _current_data  : Dictionary = {}
 var _current_node  : String    = ""
+var _current_actor : Node      = null
 var _active        : bool      = false
 
 
@@ -33,8 +34,8 @@ func is_active() -> bool:
 	return _active
 
 
-## Start a dialog from a JSON file path. The NPC reference is stored for signals.
-func start(npc: Node3D, dialog_path: String, start_node: String = "start") -> void:
+## Start a dialog from a JSON file path. The NPC and actor (player) are stored for signals.
+func start(npc: Node3D, dialog_path: String, actor: Node, start_node: String = "start") -> void:
 	var file := FileAccess.open(dialog_path, FileAccess.READ)
 	if file == null:
 		push_error("DialogManager: could not open %s" % dialog_path)
@@ -43,14 +44,15 @@ func start(npc: Node3D, dialog_path: String, start_node: String = "start") -> vo
 	if json.parse(file.get_as_text()) != OK:
 		push_error("DialogManager: JSON parse error in %s: %s" % [dialog_path, json.get_error_message()])
 		return
-	start_from_data(npc, json.data, start_node)
+	start_from_data(npc, json.data, actor, start_node)
 
 
 ## Start a dialog from an already-parsed Dictionary.
-func start_from_data(npc: Node3D, data: Dictionary, start_node: String = "start") -> void:
-	_current_npc  = npc
-	_current_data = data.get("nodes", {})
-	_active       = true
+func start_from_data(npc: Node3D, data: Dictionary, actor: Node, start_node: String = "start") -> void:
+	_current_npc   = npc
+	_current_data  = data.get("nodes", {})
+	_current_actor = actor
+	_active        = true
 	dialog_started.emit(npc)
 	show_node(start_node)
 
@@ -85,27 +87,31 @@ func show_node(node_id: String) -> void:
 
 	# Trigger quest offer if this node carries give_quest data.
 	var give_quest : Variant = node.get("give_quest", null)
-	if give_quest != null and give_quest is Dictionary:
+	if give_quest != null and give_quest is Dictionary and _current_actor != null:
+		var quests   := _current_actor.get_node("Quests")
 		var quest_id : String = (give_quest as Dictionary).get("title_key", "")
-		if not QuestManager.is_quest_active(quest_id) and not QuestManager.is_quest_completed(quest_id):
+		if not quests.is_quest_active(quest_id) and not quests.is_quest_completed(quest_id):
+			quests.accept_quest(give_quest as Dictionary)
 			quest_offered.emit(give_quest as Dictionary)
 
 	# Collect all pending board quest rewards.
-	if node.get("collect_all_board_rewards", false):
-		QuestManager.mark_all_board_rewards_collected()
+	if node.get("collect_all_board_rewards", false) and _current_actor != null:
+		_current_actor.get_node("Quests").mark_all_board_rewards_collected()
 
 	# Handle quest turn-in: check inventory, remove item, complete quest.
 	# If the player lacks the required item, redirect to the fail node instead.
 	var turn_in : Variant = node.get("turn_in_quest", null)
-	if turn_in != null and turn_in is Dictionary:
-		var quest_id : String = (turn_in as Dictionary).get("quest_id", "")
-		var item_id  : String = (turn_in as Dictionary).get("item_id", "")
+	if turn_in != null and turn_in is Dictionary and _current_actor != null:
+		var quests    := _current_actor.get_node("Quests")
+		var inventory := _current_actor.get_node("Inventory")
+		var quest_id  : String = (turn_in as Dictionary).get("quest_id", "")
+		var item_id   : String = (turn_in as Dictionary).get("item_id", "")
 		var fail_node : String = (turn_in as Dictionary).get("fail", "")
 		var needs_item : bool = not item_id.is_empty()
-		if QuestManager.is_quest_active(quest_id) and (not needs_item or InventoryManager.has_item(item_id)):
+		if quests.is_quest_active(quest_id) and (not needs_item or inventory.has_item(item_id)):
 			if needs_item:
-				InventoryManager.remove_item_by_id(item_id, 1)
-			QuestManager.complete_quest(quest_id)
+				inventory.remove_item_by_id(item_id, 1)
+			quests.complete_quest(quest_id)
 		elif not fail_node.is_empty():
 			show_node(fail_node)
 			return
@@ -151,7 +157,8 @@ func end() -> void:
 		return
 	_active = false
 	var npc := _current_npc
-	_current_npc  = null
-	_current_data = {}
-	_current_node = ""
+	_current_npc   = null
+	_current_data  = {}
+	_current_node  = ""
+	_current_actor = null
 	dialog_ended.emit(npc)

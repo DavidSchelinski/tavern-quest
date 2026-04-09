@@ -19,7 +19,7 @@ func interact(player: Node3D) -> void:
 	_player_ref   = player
 	if player.has_method("enter_dialog"):
 		player.enter_dialog()
-	DialogManager.start_from_data(self, _build_dialog_data())
+	DialogManager.start_from_data(self, _build_dialog_data(), player)
 
 
 # ── Dialog construction ───────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ func _build_dialog_data() -> Dictionary:
 	choices.append({ "text": "RECEPTIONIST_CHOICE_RANK", "next": "rank_info" })
 
 	# Reward collection if applicable.
-	if not QuestManager.get_unrewarded_board_quests().is_empty():
+	if not _player_ref.get_node("Quests").get_unrewarded_board_quests().is_empty():
 		choices.append({ "text": "RECEPTIONIST_COLLECT_ALL", "next": "collect" })
 
 	choices.append({ "text": "DIALOG_GOODBYE", "next": "" })
@@ -59,12 +59,12 @@ func _build_dialog_data() -> Dictionary:
 
 
 func _build_rank_text() -> String:
-	var rank     : String = GuildRankManager.get_rank()
-	var pts      : int    = GuildRankManager.get_points()
-	var needed   : int    = GuildRankManager.get_points_needed()
-	var is_max   : bool   = GuildRankManager.is_max_rank()
-	var is_ready : bool   = GuildRankManager.is_promotion_ready()
-	var active   : bool   = QuestManager.is_quest_active(GuildRankManager.get_promo_quest_key())
+	var rank     : String = _player_ref.get_node("GuildRank").get_rank()
+	var pts      : int    = _player_ref.get_node("GuildRank").get_points()
+	var needed   : int    = _player_ref.get_node("GuildRank").get_points_needed()
+	var is_max   : bool   = _player_ref.get_node("GuildRank").is_max_rank()
+	var is_ready : bool   = _player_ref.get_node("GuildRank").is_promotion_ready()
+	var active   : bool   = _player_ref.get_node("Quests").is_quest_active(_player_ref.get_node("GuildRank").get_promo_quest_key())
 
 	var lines : PackedStringArray = []
 	lines.append(tr("RECEPTIONIST_RANK_INFO_FMT") % [rank, pts, needed if not is_max else pts])

@@ -19,19 +19,19 @@ func interact(player: Node3D) -> void:
 	_player_ref   = player
 	if player.has_method("enter_dialog"):
 		player.enter_dialog()
-	DialogManager.start_from_data(self, _build_dialog_data())
+	DialogManager.start_from_data(self, _build_dialog_data(), player)
 
 
 # ── Dialog construction ───────────────────────────────────────────────────────
 
 func _build_dialog_data() -> Dictionary:
-	var rank      : String = GuildRankManager.get_rank()
-	var pts       : int    = GuildRankManager.get_points()
-	var needed    : int    = GuildRankManager.get_points_needed()
-	var promo_key : String = GuildRankManager.get_promo_quest_key()
-	var is_max    : bool   = GuildRankManager.is_max_rank()
-	var is_ready  : bool   = GuildRankManager.is_promotion_ready()
-	var promo_active : bool = not promo_key.is_empty() and QuestManager.is_quest_active(promo_key)
+	var rank      : String = _player_ref.get_node("GuildRank").get_rank()
+	var pts       : int    = _player_ref.get_node("GuildRank").get_points()
+	var needed    : int    = _player_ref.get_node("GuildRank").get_points_needed()
+	var promo_key : String = _player_ref.get_node("GuildRank").get_promo_quest_key()
+	var is_max    : bool   = _player_ref.get_node("GuildRank").is_max_rank()
+	var is_ready  : bool   = _player_ref.get_node("GuildRank").is_promotion_ready()
+	var promo_active : bool = not promo_key.is_empty() and _player_ref.get_node("Quests").is_quest_active(promo_key)
 
 	if is_max:
 		return _dialog_max_rank()
@@ -68,7 +68,7 @@ func _dialog_not_ready(rank: String, pts: int, needed: int) -> Dictionary:
 
 
 func _dialog_offer_promo(rank: String, promo_key: String) -> Dictionary:
-	var next_rank : String = GuildRankManager.RANKS[GuildRankManager.get_rank_index() + 1]
+	var next_rank : String = _player_ref.get_node("GuildRank").RANKS[_player_ref.get_node("GuildRank").get_rank_index() + 1]
 	var offer_text : String = tr("GUILD_LEADER_PROMO_OFFER_FMT") % next_rank
 
 	var promo_quest : Dictionary = {

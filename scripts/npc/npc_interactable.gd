@@ -100,7 +100,7 @@ func interact(player: Node3D) -> void:
 
 	var path : String = _get_dialog_path()
 	if not path.is_empty():
-		DialogManager.start(self, path)
+		DialogManager.start(self, path, player)
 	else:
 		push_warning("NpcInteractable: no dialog_path set for %s" % name)
 		_in_dialog = false

@@ -72,8 +72,6 @@ func _ready() -> void:
 	_ui.visible = false
 	_board_cam.fov = 90.0
 	_quest_label.meta_clicked.connect(_on_quest_clicked)
-	QuestManager.quests_changed.connect(_rebuild_board)
-	_rebuild_board()
 
 
 # ── Interactable interface ────────────────────────────────────────────────────
@@ -88,6 +86,8 @@ func on_look_away() -> void:
 
 func interact(player: Node3D) -> void:
 	_player = player
+	_player.get_node("Quests").quests_changed.connect(_rebuild_board)
+	_rebuild_board()
 	_prompt.visible = false
 	player.enter_board_view(_board_cam)
 	var tween : Tween = create_tween().set_trans(Tween.TRANS_SINE)
@@ -99,39 +99,47 @@ func on_interact_exit() -> void:
 	_ui.visible = false
 	var tween : Tween = create_tween().set_trans(Tween.TRANS_SINE)
 	tween.tween_property(_board_cam, "fov", 90.0, 0.3)
+	if _player != null:
+		_player.get_node("Quests").quests_changed.disconnect(_rebuild_board)
 	_player = null
 
 
 # ── Board text ────────────────────────────────────────────────────────────────
 
 func _rebuild_board() -> void:
+	if _player == null:
+		return
 	_quest_label.text = _build_quest_bbcode()
 
 
 func _on_quest_clicked(meta: Variant) -> void:
+	if _player == null:
+		return
 	var quest_id : String = str(meta)
 	for q : Dictionary in QUESTS:
 		if q.get("title_key", "") == quest_id:
-			if not GuildRankManager.can_accept_quest_rank(q.get("rank", "F") as String):
+			if not _player.get_node("GuildRank").can_accept_quest_rank(q.get("rank", "F") as String):
 				return   # rank too low — link click ignored
-			if QuestManager.accept_quest(q):
+			if _player.get_node("Quests").accept_quest(q):
 				_rebuild_board()
 			return
 
 
 func _build_quest_bbcode() -> String:
+	var quests := _player.get_node("Quests")
+	var guild  := _player.get_node("GuildRank")
 	var lines : PackedStringArray = []
 	lines.append("[center][font_size=22][b]%s[/b][/font_size][/center]\n" % tr("QUEST_BOARD_TITLE"))
 
 	for q : Dictionary in QUESTS:
 		var quest_id  : String = q.get("title_key", "") as String
-		var is_active : bool   = QuestManager.is_quest_active(quest_id)
-		var is_done   : bool   = QuestManager.is_quest_completed(quest_id)
+		var is_active : bool   = quests.is_quest_active(quest_id)
+		var is_done   : bool   = quests.is_quest_completed(quest_id)
 
 		var rank_str  : String = q.get("rank", "?") as String
 		var title     : String = tr(quest_id)
 
-		var rank_locked : bool = not GuildRankManager.can_accept_quest_rank(rank_str)
+		var rank_locked : bool = not guild.can_accept_quest_rank(rank_str)
 
 		if is_done:
 			lines.append("[color=#556644][b][Rang %s]  %s  ✓[/b][/color]" % [rank_str, title])

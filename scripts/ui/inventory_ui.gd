@@ -58,9 +58,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_ui()
 	visible = false
-	InventoryManager.slot_changed.connect(_on_slot_changed)
-	CharacterStats.stats_changed.connect(_on_stats_changed)
-	QuestManager.quests_changed.connect(_on_quests_changed)
+	get_parent().get_node("Inventory").slot_changed.connect(_on_slot_changed)
+	get_parent().get_node("Stats").stats_changed.connect(_on_stats_changed)
+	get_parent().get_node("Quests").quests_changed.connect(_on_quests_changed)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ func close() -> void:
 	_close_context_menu()
 	_close_split_dialog()
 	if _held_data != null:
-		var leftover := InventoryManager.add_item(_held_data["item"], _held_data["count"])
+		var leftover: int = get_parent().get_node("Inventory").add_item(_held_data["item"], _held_data["count"])
 		if leftover > 0:
 			_drop_to_world(_held_data["item"], leftover)
 		_clear_held()
@@ -403,8 +403,8 @@ func _refresh_quest_page() -> void:
 		child.queue_free()
 	_quest_entry_btns.clear()
 
-	var active    : Array[Dictionary] = QuestManager.get_active_quests()
-	var completed : Array[Dictionary] = QuestManager.get_completed_quests()
+	var active    : Array[Dictionary] = get_parent().get_node("Quests").get_active_quests()
+	var completed : Array[Dictionary] = get_parent().get_node("Quests").get_completed_quests()
 
 	if active.is_empty() and completed.is_empty():
 		_add_list_placeholder("Noch keine Quests.\nBesuche das Quest-Board.")
@@ -430,7 +430,7 @@ func _refresh_quest_page() -> void:
 	# Re-select currently shown quest if it still exists.
 	if not _selected_quest.is_empty():
 		var id : String = _selected_quest.get("title_key", "") as String
-		if QuestManager.is_quest_active(id) or QuestManager.is_quest_completed(id):
+		if get_parent().get_node("Quests").is_quest_active(id) or get_parent().get_node("Quests").is_quest_completed(id):
 			_show_quest_detail(_selected_quest)
 			return
 	_clear_quest_detail()
@@ -503,7 +503,7 @@ func _add_quest_entry(quest: Dictionary, is_completed: bool) -> void:
 func _show_quest_detail(quest: Dictionary) -> void:
 	_selected_quest = quest
 	var quest_id : String = quest.get("title_key", "") as String
-	var is_done  : bool   = QuestManager.is_quest_completed(quest_id)
+	var is_done  : bool   = get_parent().get_node("Quests").is_quest_completed(quest_id)
 	var rank     : String = quest.get("rank", "?") as String
 
 	# Hide empty hint.
@@ -583,7 +583,7 @@ func _build_inventory_page(page: Control, panel_w: float, grid_w: float, grid_h:
 	_grid.size     = Vector2(grid_w, grid_h)
 	page.add_child(_grid)
 
-	for i in InventoryManager.SLOT_COUNT:
+	for i in get_parent().get_node("Inventory").SLOT_COUNT:
 		var slot := _create_slot(i)
 		_grid.add_child(slot)
 		_slot_panels.append(slot)
@@ -664,7 +664,7 @@ func _build_character_page(page: Control, panel_w: float, _page_h: float) -> voi
 
 	# ── Stat rows ──
 	var row_h := 38.0
-	for stat in CharacterStats.STAT_NAMES:
+	for stat in get_parent().get_node("Stats").STAT_NAMES:
 		_build_stat_row(page, stat, p, y, panel_w - p * 2, row_h)
 		y += row_h + 4
 
@@ -719,7 +719,7 @@ func _build_stat_row(parent: Control, stat: String,
 
 	# Stat name.
 	var name_lbl := Label.new()
-	name_lbl.text               = CharacterStats.STAT_LABELS[stat]
+	name_lbl.text               = get_parent().get_node("Stats").STAT_LABELS[stat]
 	name_lbl.position           = Vector2(8, 0)
 	name_lbl.size               = Vector2(155, h)
 	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -749,7 +749,7 @@ func _build_stat_row(parent: Control, stat: String,
 
 	# Description (clipped so it never overflows).
 	var desc := Label.new()
-	desc.text               = CharacterStats.STAT_DESC[stat]
+	desc.text               = get_parent().get_node("Stats").STAT_DESC[stat]
 	desc.position           = Vector2(240, 0)
 	desc.size               = Vector2(w - 248, h)
 	desc.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -819,14 +819,14 @@ func _on_stats_changed() -> void:
 
 
 func _on_spend_point(stat: String) -> void:
-	CharacterStats.spend_point(stat)
+	get_parent().get_node("Stats").spend_point(stat)
 
 
 func _refresh_character_page() -> void:
 	if _stat_points_label == null:
 		return
 
-	var pts := CharacterStats.stat_points
+	var pts: int = get_parent().get_node("Stats").stat_points
 	if pts > 0:
 		_stat_points_label.text = "✦ %d Statpunkt%s verfügbar" % [pts, "e" if pts != 1 else ""]
 		_stat_points_label.add_theme_color_override("font_color", Color(0.45, 0.92, 0.45, 1.0))
@@ -834,8 +834,8 @@ func _refresh_character_page() -> void:
 		_stat_points_label.text = "Keine Statpunkte verfügbar"
 		_stat_points_label.add_theme_color_override("font_color", Color(0.50, 0.50, 0.50, 1.0))
 
-	for stat in CharacterStats.STAT_NAMES:
-		var val  : int = CharacterStats.stats[stat]
+	for stat in get_parent().get_node("Stats").STAT_NAMES:
+		var val  : int = get_parent().get_node("Stats").stats[stat]
 		var lbl  : Label  = _stat_val_labels[stat]
 		var btn  : Button = _stat_plus_btns[stat]
 
@@ -846,11 +846,11 @@ func _refresh_character_page() -> void:
 		btn.disabled = (pts <= 0)
 
 	# Derived values.
-	var dmg_pct := int((CharacterStats.get_damage_multiplier()      - 1.0) * 100.0)
-	var spd_pct := int((CharacterStats.get_speed_multiplier()       - 1.0) * 100.0)
-	var atk_pct := int((CharacterStats.get_attack_speed_multiplier()- 1.0) * 100.0)
-	var red_pct := int(CharacterStats.get_damage_reduction()               * 100.0)
-	var max_hp  := CharacterStats.get_max_hp()
+	var dmg_pct := int((get_parent().get_node("Stats").get_damage_multiplier()      - 1.0) * 100.0)
+	var spd_pct := int((get_parent().get_node("Stats").get_speed_multiplier()       - 1.0) * 100.0)
+	var atk_pct := int((get_parent().get_node("Stats").get_attack_speed_multiplier()- 1.0) * 100.0)
+	var red_pct := int(get_parent().get_node("Stats").get_damage_reduction()               * 100.0)
+	var max_hp: int = get_parent().get_node("Stats").get_max_hp()
 
 	_derived_labels["max_hp"  ].text = "%d HP" % max_hp
 	_derived_labels["dmg_mult"].text = ("+%d %%" % dmg_pct) if dmg_pct > 0 else "–"
@@ -876,7 +876,7 @@ func _refresh_character_page() -> void:
 # ──────────────────────────────────────────────────────────────────────────────
 
 func _refresh_all_slots() -> void:
-	for i in InventoryManager.SLOT_COUNT:
+	for i in get_parent().get_node("Inventory").SLOT_COUNT:
 		_refresh_slot(i)
 
 
@@ -886,7 +886,7 @@ func _refresh_slot(index: int) -> void:
 	var panel := _slot_panels[index]
 	var icon  := panel.get_node("Icon") as TextureRect
 	var lbl   := panel.get_node("Count") as Label
-	var data  = InventoryManager.get_slot(index)
+	var data  = get_parent().get_node("Inventory").get_slot(index)
 
 	if data == null:
 		icon.texture = null
@@ -952,7 +952,7 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 	_close_split_dialog()
 
 	if _held_data == null:
-		var data = InventoryManager.take_slot(index)
+		var data = get_parent().get_node("Inventory").take_slot(index)
 		if data != null:
 			_held_data = data
 			_held_icon.texture = _get_icon(data["item"])
@@ -961,7 +961,7 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 			_held_label.visible = data["count"] > 1
 			_update_held_position(event.global_position)
 	else:
-		var returned = InventoryManager.put_slot(index, _held_data)
+		var returned = get_parent().get_node("Inventory").put_slot(index, _held_data)
 		if returned == null:
 			_clear_held()
 		else:
@@ -1001,7 +1001,7 @@ func _clear_held() -> void:
 # ──────────────────────────────────────────────────────────────────────────────
 
 func _open_context_menu(slot_index: int, pos: Vector2) -> void:
-	var data = InventoryManager.get_slot(slot_index)
+	var data = get_parent().get_node("Inventory").get_slot(slot_index)
 	if data == null:
 		return
 	_close_context_menu()
@@ -1040,7 +1040,7 @@ func _open_context_menu(slot_index: int, pos: Vector2) -> void:
 	drop_btn.text = "Drop Stack" if count > 1 else "Drop"
 	drop_btn.custom_minimum_size = Vector2(120, 32)
 	drop_btn.pressed.connect(func() -> void:
-		var taken = InventoryManager.take_slot(slot_index)
+		var taken = get_parent().get_node("Inventory").take_slot(slot_index)
 		if taken != null:
 			_drop_to_world(taken["item"], taken["count"])
 		_close_context_menu()
@@ -1071,7 +1071,7 @@ func _close_context_menu() -> void:
 # ──────────────────────────────────────────────────────────────────────────────
 
 func _open_split_dialog(slot_index: int, pos: Vector2) -> void:
-	var data = InventoryManager.get_slot(slot_index)
+	var data = get_parent().get_node("Inventory").get_slot(slot_index)
 	if data == null:
 		return
 	var count : int = data["count"]
@@ -1145,7 +1145,7 @@ func _open_split_dialog(slot_index: int, pos: Vector2) -> void:
 
 
 func _do_split(slot_index: int, take_count: int) -> void:
-	var data = InventoryManager.get_slot(slot_index)
+	var data = get_parent().get_node("Inventory").get_slot(slot_index)
 	if data == null:
 		_close_split_dialog()
 		return
@@ -1154,8 +1154,8 @@ func _do_split(slot_index: int, take_count: int) -> void:
 	var split_amount : int      = clampi(take_count, 1, total - 1)
 
 	data["count"] = total - split_amount
-	InventoryManager.slot_changed.emit(slot_index)
-	InventoryManager.inventory_changed.emit()
+	get_parent().get_node("Inventory").slot_changed.emit(slot_index)
+	get_parent().get_node("Inventory").inventory_changed.emit()
 
 	_held_data          = { "item": item, "count": split_amount }
 	_held_icon.texture  = _get_icon(item)

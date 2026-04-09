@@ -67,8 +67,8 @@ func _on_dialog_ended_bartender(npc: Node3D) -> void:
 		_show_bubble(true)
 
 
-func _show_bubble(show: bool) -> void:
-	if show:
+func _show_bubble(do_show: bool) -> void:
+	if do_show:
 		_speech_bubble.scale   = Vector3.ZERO
 		_speech_bubble.visible = true
 		var tw : Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

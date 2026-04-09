@@ -88,7 +88,7 @@ func interact(player: Node3D) -> void:
 	_player_ref   = player
 	if player.has_method("enter_dialog"):
 		player.enter_dialog()
-	DialogManager.start_from_data(self, _build_dialog())
+	DialogManager.start_from_data(self, _build_dialog(), player)
 
 
 ## Nach Dialog-Ende Wandern wieder aufnehmen.
@@ -101,8 +101,8 @@ func _on_dialog_ended(npc: Node3D) -> void:
 # ── Dialog-Aufbau ─────────────────────────────────────────────────────────────
 
 func _build_dialog() -> Dictionary:
-	var is_active : bool = QuestManager.is_quest_active(quest_title_key)
-	var is_done   : bool = QuestManager.is_quest_completed(quest_title_key)
+	var is_active : bool = _player_ref.get_node("Quests").is_quest_active(quest_title_key)
+	var is_done   : bool = _player_ref.get_node("Quests").is_quest_completed(quest_title_key)
 	var nodes     : Dictionary = {}
 
 	if is_done:

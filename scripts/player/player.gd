@@ -71,14 +71,14 @@ var net_combat : int = 0
 
 # ── Health & Stamina ──────────────────────────────────────────────────────────
 const MAX_STAMINA : float = 100.0
-var health   : float = 0.0          # initialised in _ready via CharacterStats
+var health   : float = 0.0          # initialised in _ready via $Stats
 var _stamina : float = MAX_STAMINA
 var _hud     : CanvasLayer = null
 
 
 func _ready() -> void:
 	add_to_group("player")
-	health = CharacterStats.get_max_hp()
+	health = $Stats.get_max_hp()
 	if not multiplayer.has_multiplayer_peer():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		camera.current = true
@@ -423,7 +423,7 @@ func _physics_process(delta: float) -> void:
 		_stamina = minf(MAX_STAMINA, _stamina + 15.0 * delta)
 
 	var speed : float = (SPRINT_SPEED if sprinting else WALK_SPEED) \
-						* CharacterStats.get_speed_multiplier()
+						* $Stats.get_speed_multiplier()
 
 	var direction : Vector3 = Vector3.ZERO
 	if input_dir != Vector2.ZERO:
@@ -622,7 +622,7 @@ func exit_board_view() -> void:
 func take_damage(amount: float) -> void:
 	if not _is_mine():
 		return
-	var reduction : float = CharacterStats.get_damage_reduction()
+	var reduction : float = $Stats.get_damage_reduction()
 	var actual    : float = amount * (1.0 - reduction)
 	health = maxf(0.0, health - actual)
 	if _hud != null and _hud.has_method("flash_damage"):

@@ -30,7 +30,7 @@ func _ready() -> void:
 	_cfg.load(SETTINGS_PATH)
 	_build_ui()
 	_apply_display_settings()
-	QuestManager.quests_changed.connect(_refresh_dev_tab)
+	get_parent().get_node("Quests").quests_changed.connect(_refresh_dev_tab)
 	visible = false
 
 
@@ -445,16 +445,16 @@ func _refresh_dev_tab() -> void:
 	var rank_lbl := _dev_list.get_parent().get_parent().get_parent() \
 		.find_child("DevRankLabel", true, false) as Label
 	if rank_lbl:
-		var rank  : String = GuildRankManager.get_rank()
-		var pts   : int    = GuildRankManager.get_points()
-		var needed : int   = GuildRankManager.get_points_needed()
+		var rank  : String = get_parent().get_node("GuildRank").get_rank()
+		var pts   : int    = get_parent().get_node("GuildRank").get_points()
+		var needed : int   = get_parent().get_node("GuildRank").get_points_needed()
 		rank_lbl.text = "Rang: %s  |  Punkte: %d / %d" % [rank, pts, needed]
 
 	# Rebuild quest list.
 	for child in _dev_list.get_children():
 		child.queue_free()
 
-	var active : Array[Dictionary] = QuestManager.get_active_quests()
+	var active : Array[Dictionary] = get_parent().get_node("Quests").get_active_quests()
 	if active.is_empty():
 		var lbl := Label.new()
 		lbl.text = "Keine aktiven Quests."
@@ -478,6 +478,6 @@ func _refresh_dev_tab() -> void:
 		btn.text = "✓ Abschließen"
 		btn.custom_minimum_size = Vector2(140, 0)
 		btn.pressed.connect(func() -> void:
-			QuestManager.complete_quest(quest_id)
+			get_parent().get_node("Quests").complete_quest(quest_id)
 		)
 		row.add_child(btn)

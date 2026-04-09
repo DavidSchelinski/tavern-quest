@@ -3,6 +3,10 @@
 [ext_resource type="PackedScene" uid="uid://deerqrei7lpse" path="res://assets/models/anims/UAL1_Standard.glb" id="1_character"]
 [ext_resource type="Script" uid="uid://coiifuvnd8m6a" path="res://scripts/player/player.gd" id="2_script"]
 [ext_resource type="Script" uid="uid://combat_handler" path="res://scripts/player/combat_handler.gd" id="3_combat"]
+[ext_resource type="Script" path="res://scripts/inventory/inventory_component.gd" id="4_inventory"]
+[ext_resource type="Script" path="res://scripts/player/stats_component.gd" id="5_stats"]
+[ext_resource type="Script" path="res://scripts/world/quest_component.gd" id="6_quests"]
+[ext_resource type="Script" path="res://scripts/world/guild_rank_component.gd" id="7_guildrank"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_col"]
 radius = 0.4
@@ -51,6 +55,18 @@ current = false
 
 [node name="CombatHandler" type="Node" parent="."]
 script = ExtResource("3_combat")
+
+[node name="Inventory" type="Node" parent="."]
+script = ExtResource("4_inventory")
+
+[node name="Stats" type="Node" parent="."]
+script = ExtResource("5_stats")
+
+[node name="Quests" type="Node" parent="."]
+script = ExtResource("6_quests")
+
+[node name="GuildRank" type="Node" parent="."]
+script = ExtResource("7_guildrank")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("ReplicationConfig")

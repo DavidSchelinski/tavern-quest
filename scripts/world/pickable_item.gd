@@ -68,8 +68,8 @@ func _apply_item_color() -> void:
 		_hint.text = "[E] " + item_data.display_name
 
 
-func interact(_player: Node3D) -> void:
-	_pickup()
+func interact(actor: Node3D) -> void:
+	_pickup(actor)
 
 
 func on_look_at() -> void:
@@ -80,10 +80,10 @@ func on_look_away() -> void:
 	_hint.visible = false
 
 
-func _pickup() -> void:
+func _pickup(actor: Node3D) -> void:
 	if item_data == null:
 		queue_free()
 		return
-	var leftover := InventoryManager.add_item(item_data, 1)
+	var leftover: int = actor.get_node("Inventory").add_item(item_data, 1)
 	if leftover == 0:
 		queue_free()

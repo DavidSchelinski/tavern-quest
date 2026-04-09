@@ -176,7 +176,7 @@ func _play(d: Dictionary) -> void:
 	_player._current_anim = ANIM_SWORD_ATTACK
 
 	# Apply Agility multiplier to animation speed.
-	var spd_mult : float = CharacterStats.get_attack_speed_multiplier()
+	var spd_mult : float = _player.get_node("Stats").get_attack_speed_multiplier()
 	var actual_speed : float = (d["speed"] as float) * spd_mult
 	_anim.speed_scale = actual_speed
 
@@ -205,7 +205,7 @@ func _arm_hitbox(dmg: float) -> void:
 	if _hitbox == null or not _player.is_attacking:
 		return
 	# Apply Strength multiplier to outgoing damage.
-	_hitbox.set_meta("dmg", dmg * CharacterStats.get_damage_multiplier())
+	_hitbox.set_meta("dmg", dmg * _player.get_node("Stats").get_damage_multiplier())
 	_hitbox.monitoring = true
 	_hitbox_active     = true
 	_hitbox_time       = 0.0
