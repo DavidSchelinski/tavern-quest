@@ -102,11 +102,24 @@ func _is_mine() -> bool:
 func _setup_multiplayer() -> void:
 	if not multiplayer.has_multiplayer_peer():
 		return
+	$ComponentSync.set_multiplayer_authority(1)
 	if _is_mine():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		camera.current = true
 	else:
 		camera.current = false
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _server_request_pickup(item_path: NodePath) -> void:
+	if not multiplayer.is_server():
+		return
+	var item := get_node_or_null(item_path)
+	if item == null or not item.is_in_group("pickable"):
+		return
+	var leftover: int = $Inventory.add_item(item.item_data, 1)
+	if leftover == 0:
+		item.rpc("network_despawn")
 
 
 # ── Game menu ─────────────────────────────────────────────────────────────────
@@ -284,12 +297,15 @@ func _setup_combat() -> void:
 		push_warning("Player: CombatHandler node not found.")
 		return
 
-	if not _is_mine():
-		return   # only local player needs an active combat handler
-
-	# Find AnimationPlayer (may not be ready yet if _setup_animations is still deferred)
+	# Find AnimationPlayer for ALL players — remote players need it so that
+	# on_anim_finished can reset speed_scale without crashing on Nil.
 	if _anim_player == null:
 		_anim_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
+
+	if not _is_mine():
+		# Remote players: wire up anim reference but skip sword, hitbox, and HUD.
+		_combat.setup(self, _anim_player, null)
+		return
 
 	# Find Skeleton3D by type — its node name varies by GLB import settings
 	var sk_nodes   := find_children("*", "Skeleton3D", true, false)
@@ -372,7 +388,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		_open_inventory()
 		return
 	if event.is_action_pressed("interact") and _current_interactable:
-		_current_interactable.interact(self)
+		if _current_interactable.is_in_group("pickable"):
+			if multiplayer.has_multiplayer_peer():
+				rpc_id(1, "_server_request_pickup", _current_interactable.get_path())
+			else:
+				_server_request_pickup(_current_interactable.get_path())
+		else:
+			_current_interactable.interact(self)
 		return
 	# Forward attack inputs to the combat handler
 	if _combat != null and (event.is_action("attack")):

@@ -78,9 +78,9 @@ func close() -> void:
 	_close_context_menu()
 	_close_split_dialog()
 	if _held_data != null:
-		var leftover: int = get_parent().get_node("Inventory").add_item(_held_data["item"], _held_data["count"])
+		var leftover: int = get_parent().get_node("Inventory").add_item(_load_item(_held_data["id"]), _held_data["count"])
 		if leftover > 0:
-			_drop_to_world(_held_data["item"], leftover)
+			_drop_to_world(_held_data["id"], leftover)
 		_clear_held()
 	visible = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -872,6 +872,14 @@ func _refresh_character_page() -> void:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+#  HELPERS
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _load_item(item_id: String) -> ItemData:
+	return load("res://data/items/" + item_id + ".tres") as ItemData
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 #  SLOT RENDERING
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -892,7 +900,7 @@ func _refresh_slot(index: int) -> void:
 		icon.texture = null
 		lbl.text     = ""
 	else:
-		var item : ItemData = data["item"]
+		var item : ItemData = _load_item(data["id"])
 		icon.texture = _get_icon(item)
 		lbl.text     = str(data["count"]) if data["count"] > 1 else ""
 
@@ -955,7 +963,7 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 		var data = get_parent().get_node("Inventory").take_slot(index)
 		if data != null:
 			_held_data = data
-			_held_icon.texture = _get_icon(data["item"])
+			_held_icon.texture = _get_icon(_load_item(data["id"]))
 			_held_icon.visible = true
 			_held_label.text   = str(data["count"]) if data["count"] > 1 else ""
 			_held_label.visible = data["count"] > 1
@@ -966,7 +974,7 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 			_clear_held()
 		else:
 			_held_data = returned
-			_held_icon.texture  = _get_icon(returned["item"])
+			_held_icon.texture  = _get_icon(_load_item(returned["id"]))
 			_held_label.text    = str(returned["count"]) if returned["count"] > 1 else ""
 			_held_label.visible = returned["count"] > 1
 
@@ -979,7 +987,7 @@ func _on_bg_input(event: InputEvent) -> void:
 		_close_context_menu()
 		_close_split_dialog()
 	if event.button_index == MOUSE_BUTTON_LEFT and _held_data != null:
-		_drop_to_world(_held_data["item"], _held_data["count"])
+		_drop_to_world(_held_data["id"], _held_data["count"])
 		_clear_held()
 
 
@@ -1007,7 +1015,7 @@ func _open_context_menu(slot_index: int, pos: Vector2) -> void:
 	_close_context_menu()
 	_ctx_slot = slot_index
 
-	var item  : ItemData = data["item"]
+	var item  : ItemData = _load_item(data["id"])
 	var count : int      = data["count"]
 
 	_ctx_menu = Panel.new()
@@ -1042,7 +1050,7 @@ func _open_context_menu(slot_index: int, pos: Vector2) -> void:
 	drop_btn.pressed.connect(func() -> void:
 		var taken = get_parent().get_node("Inventory").take_slot(slot_index)
 		if taken != null:
-			_drop_to_world(taken["item"], taken["count"])
+			_drop_to_world(taken["id"], taken["count"])
 		_close_context_menu()
 	)
 	col.add_child(drop_btn)
@@ -1149,7 +1157,7 @@ func _do_split(slot_index: int, take_count: int) -> void:
 	if data == null:
 		_close_split_dialog()
 		return
-	var item         : ItemData = data["item"]
+	var item         : ItemData = _load_item(data["id"])
 	var total        : int      = data["count"]
 	var split_amount : int      = clampi(take_count, 1, total - 1)
 
@@ -1157,7 +1165,7 @@ func _do_split(slot_index: int, take_count: int) -> void:
 	get_parent().get_node("Inventory").slot_changed.emit(slot_index)
 	get_parent().get_node("Inventory").inventory_changed.emit()
 
-	_held_data          = { "item": item, "count": split_amount }
+	_held_data          = { "id": data["id"], "count": split_amount }
 	_held_icon.texture  = _get_icon(item)
 	_held_icon.visible  = true
 	_held_label.text    = str(split_amount) if split_amount > 1 else ""
@@ -1179,7 +1187,7 @@ func _close_split_dialog() -> void:
 #  DROP TO WORLD
 # ──────────────────────────────────────────────────────────────────────────────
 
-func _drop_to_world(item: ItemData, count: int) -> void:
+func _drop_to_world(item_id: String, count: int) -> void:
 	if _player_ref == null:
 		return
 	var scene := load("res://scenes/world/pickable_item.tscn") as PackedScene
@@ -1188,7 +1196,7 @@ func _drop_to_world(item: ItemData, count: int) -> void:
 		return
 	for i in count:
 		var inst := scene.instantiate()
-		inst.item_data = item
+		inst.item_data = _load_item(item_id)
 		var fwd    := -_player_ref.global_transform.basis.z
 		var offset := fwd * 2.0 + Vector3(randf_range(-0.3, 0.3), 0.5, randf_range(-0.3, 0.3))
 		inst.global_position = _player_ref.global_position + offset

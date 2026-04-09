@@ -112,7 +112,10 @@ func on_anim_finished(anim_name: String) -> void:
 	if anim_name != ANIM_SWORD_ATTACK:
 		return
 
-	_anim.speed_scale     = 1.0
+	if not is_instance_valid(_anim):
+		push_warning("CombatHandler: AnimationPlayer is nil in on_anim_finished")
+	else:
+		_anim.speed_scale = 1.0
 	_player.is_attacking  = false
 	_player.net_combat    = 0
 	_player._current_anim = ""

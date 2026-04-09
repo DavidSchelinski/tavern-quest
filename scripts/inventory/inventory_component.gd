@@ -5,7 +5,7 @@ signal inventory_changed
 
 const SLOT_COUNT : int = 30   # 6 columns × 5 rows
 
-## Each slot is either null (empty) or { "item": ItemData, "count": int }.
+## Each slot is either null (empty) or { "id": String, "count": int }.
 var slots : Array = []
 
 
@@ -24,7 +24,7 @@ func add_item(item: ItemData, count: int = 1) -> int:
 			if remaining <= 0:
 				break
 			var slot = slots[i]
-			if slot == null or (slot as Dictionary)["item"].id != item.id:
+			if slot == null or (slot as Dictionary)["id"] != item.id:
 				continue
 			var space : int = item.max_stack - (slot as Dictionary)["count"]
 			if space <= 0:
@@ -41,7 +41,7 @@ func add_item(item: ItemData, count: int = 1) -> int:
 		if slots[i] != null:
 			continue
 		var to_add : int = mini(remaining, item.max_stack) if item.stackable else 1
-		slots[i] = { "item": item, "count": to_add }
+		slots[i] = { "id": item.id, "count": to_add }
 		remaining -= to_add
 		slot_changed.emit(i)
 
@@ -57,7 +57,7 @@ func remove_item_by_id(item_id: String, count: int = 1) -> int:
 		if remaining <= 0:
 			break
 		var slot = slots[i]
-		if slot == null or (slot as Dictionary)["item"].id != item_id:
+		if slot == null or (slot as Dictionary)["id"] != item_id:
 			continue
 		var to_remove : int = mini(remaining, (slot as Dictionary)["count"])
 		(slot as Dictionary)["count"] -= to_remove
@@ -91,15 +91,16 @@ func put_slot(index: int, data: Variant) -> Variant:
 
 	# If both hold the same stackable item, merge stacks.
 	if data != null and old != null \
-		and (data as Dictionary)["item"].id == (old as Dictionary)["item"].id \
-		and (data as Dictionary)["item"].stackable:
-		var space   : int = (data as Dictionary)["item"].max_stack - (old as Dictionary)["count"]
-		var to_add  : int = mini((data as Dictionary)["count"], space)
-		(old as Dictionary)["count"]  += to_add
-		(data as Dictionary)["count"] -= to_add
-		slot_changed.emit(index)
-		inventory_changed.emit()
-		return data if (data as Dictionary)["count"] > 0 else null
+		and (data as Dictionary)["id"] == (old as Dictionary)["id"]:
+		var _item_res := load("res://data/items/" + (data as Dictionary)["id"] + ".tres") as ItemData
+		if _item_res != null and _item_res.stackable:
+			var space   : int = _item_res.max_stack - (old as Dictionary)["count"]
+			var to_add  : int = mini((data as Dictionary)["count"], space)
+			(old as Dictionary)["count"]  += to_add
+			(data as Dictionary)["count"] -= to_add
+			slot_changed.emit(index)
+			inventory_changed.emit()
+			return data if (data as Dictionary)["count"] > 0 else null
 
 	slots[index] = data
 	slot_changed.emit(index)
@@ -109,7 +110,7 @@ func put_slot(index: int, data: Variant) -> Variant:
 
 func has_item(item_id: String) -> bool:
 	for slot in slots:
-		if slot != null and (slot as Dictionary)["item"].id == item_id:
+		if slot != null and (slot as Dictionary)["id"] == item_id:
 			return true
 	return false
 
