@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://c3gqpfyehac1y"]
+
+[ext_resource type="Script" uid="uid://btnkqug51c6el" path="res://scripts/ui/skill_menu.gd" id="1_qe8po"]
+[ext_resource type="Script" uid="uid://del2laxs2eqng" path="res://scripts/skills/skill_data.gd" id="2_7p4kb"]
+[ext_resource type="Resource" uid="uid://dkqgb62kuj6eg" path="res://scripts/skills/skill_1.tres" id="3_g6321"]
+[ext_resource type="Resource" uid="uid://2q6ajlckjeke" path="res://scripts/skills/skill_2.tres" id="4_wjsxk"]
+[ext_resource type="Resource" uid="uid://voggfe6fdats" path="res://scripts/skills/skill_3.tres" id="5_igcq4"]
+
+[sub_resource type="Theme" id="Theme_yq52q"]
+default_font_size = 18
+
+[node name="SkillMapUI" type="ScrollContainer" unique_id=608017011 node_paths=PackedStringArray("skill_buttons")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_qe8po")
+skill_buttons = [NodePath("MapCanvas/Button"), NodePath("MapCanvas/Button2"), NodePath("MapCanvas/Button3")]
+skill_data_refs = Array[ExtResource("2_7p4kb")]([ExtResource("3_g6321"), ExtResource("4_wjsxk"), ExtResource("5_igcq4")])
+
+[node name="MapCanvas" type="Control" parent="." unique_id=902883759]
+custom_minimum_size = Vector2(3000, 2000)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Background" type="ColorRect" parent="MapCanvas" unique_id=1095573592]
+layout_mode = 0
+offset_right = 3000.0
+offset_bottom = 2000.0
+mouse_filter = 2
+color = Color(0.7176471, 0.6862745, 0.63529414, 1)
+
+[node name="Button" type="Button" parent="MapCanvas" unique_id=1165600137]
+layout_mode = 0
+offset_left = 252.0
+offset_top = 194.0
+offset_right = 368.0
+offset_bottom = 257.0
+theme = SubResource("Theme_yq52q")
+text = "Skill 1"
+
+[node name="Button2" type="Button" parent="MapCanvas" unique_id=515837226]
+layout_mode = 0
+offset_left = 656.0
+offset_top = 317.0
+offset_right = 772.0
+offset_bottom = 380.0
+theme = SubResource("Theme_yq52q")
+text = "Skill 2"
+
+[node name="Button3" type="Button" parent="MapCanvas" unique_id=1482385449]
+layout_mode = 0
+offset_left = 503.0
+offset_top = 659.0
+offset_right = 619.0
+offset_bottom = 722.0
+theme = SubResource("Theme_yq52q")
+text = "Skill 3"

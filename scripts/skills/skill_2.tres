@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 uid="uid://2q6ajlckjeke"]
+
+[ext_resource type="Script" uid="uid://del2laxs2eqng" path="res://scripts/skills/skill_data.gd" id="1_pdo1e"]
+
+[resource]
+script = ExtResource("1_pdo1e")
+id = "skill_2"
+display_name = "Schwerer Treffer"
+prerequisite_skills = Array[String](["skill_1"])
+metadata/_custom_type_script = "uid://del2laxs2eqng"

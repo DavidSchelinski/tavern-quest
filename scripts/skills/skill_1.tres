@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 uid="uid://dkqgb62kuj6eg"]
+
+[ext_resource type="Script" uid="uid://del2laxs2eqng" path="res://scripts/skills/skill_data.gd" id="1_tfpfs"]
+
+[resource]
+script = ExtResource("1_tfpfs")
+id = "skill_1"
+display_name = "Leichter Hieb"
+metadata/_custom_type_script = "uid://del2laxs2eqng"

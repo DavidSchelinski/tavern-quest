@@ -662,3 +662,9 @@ func _setup_hud() -> void:
 	_hud.set_script(hud_script)
 	add_child(_hud)
 	_hud.set_player(self)
+
+	var hotbar_script = load("res://scripts/ui/hotbar_ui.gd")
+	var hotbar = CanvasLayer.new()
+	hotbar.set_script(hotbar_script)
+	add_child(hotbar)
+	hotbar.set_player(self)

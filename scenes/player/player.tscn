@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/player/stats_component.gd" id="5_stats"]
 [ext_resource type="Script" path="res://scripts/world/quest_component.gd" id="6_quests"]
 [ext_resource type="Script" path="res://scripts/world/guild_rank_component.gd" id="7_guildrank"]
+[ext_resource type="Script" path="res://scripts/player/skills_component.gd" id="9_skills"]
 [ext_resource type="Script" path="res://scripts/player/camera_shake.gd" id="8_camshake"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_col"]
@@ -35,6 +36,12 @@ properties/5/replication_mode = 1
 properties/6/path = NodePath("GuildRank:_points")
 properties/6/spawn = true
 properties/6/replication_mode = 1
+properties/7/path = NodePath("Skills:_unlocked_skills")
+properties/7/spawn = true
+properties/7/replication_mode = 1
+properties/8/path = NodePath("Skills:_hotbar")
+properties/8/spawn = true
+properties/8/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="ReplicationConfig"]
 properties/0/path = NodePath(".:position")
@@ -92,6 +99,9 @@ script = ExtResource("6_quests")
 
 [node name="GuildRank" type="Node" parent="."]
 script = ExtResource("7_guildrank")
+
+[node name="Skills" type="Node" parent="."]
+script = ExtResource("9_skills")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("ReplicationConfig")

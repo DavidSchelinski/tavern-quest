@@ -108,8 +108,8 @@ func _build_ui() -> void:
 	# Panel dimensions.
 	var grid_w : float = COLS * (SLOT_SIZE + SLOT_GAP) - SLOT_GAP   # 462
 	var grid_h : float = ROWS * (SLOT_SIZE + SLOT_GAP) - SLOT_GAP   # 384
-	var panel_w : float = grid_w + PAD * 2                            # 494
-	var content_h : float = grid_h + PAD * 2 + 40                    # 456  (same as before)
+	var panel_w : float = 900.0
+	var content_h : float = 600.0
 	var panel_h : float = content_h + TAB_H                          # 494
 
 	# Outer panel.
@@ -160,6 +160,13 @@ func _build_ui() -> void:
 	_pages.append(char_page)
 	_build_character_page(char_page, panel_w, content_h)
 
+	# Page 3 – Skills.
+	var skill_page := Control.new()
+	skill_page.size = Vector2(panel_w, content_h)
+	content.add_child(skill_page)
+	_pages.append(skill_page)
+	_build_skill_page(skill_page, panel_w, content_h)
+
 	# Floating held-item icon (above everything, on _root).
 	_held_icon = TextureRect.new()
 	_held_icon.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE)
@@ -183,7 +190,7 @@ func _build_ui() -> void:
 # ── Tab strip ──────────────────────────────────────────────────────────────────
 
 func _build_tab_strip(parent: Control, panel_w: float) -> void:
-	var labels := ["Inventar", "Quests", "Charakter"]
+	var labels := ["Inventar", "Quests", "Charakter", "Skills"]
 	var tab_w  := panel_w / labels.size()
 
 	for i in labels.size():
@@ -208,6 +215,9 @@ func _switch_tab(index: int) -> void:
 		0: _refresh_all_slots()
 		1: _refresh_quest_page()
 		2: _refresh_character_page()
+		3:
+			if _pages[3].has_method("refresh_ui"):
+				_pages[3].refresh_ui()
 
 
 func _apply_tab_styles() -> void:
@@ -579,7 +589,7 @@ func _build_inventory_page(page: Control, panel_w: float, grid_w: float, grid_h:
 	page.add_child(title)
 
 	_grid = Control.new()
-	_grid.position = Vector2(PAD, 40)
+	_grid.position = Vector2((panel_w - grid_w) / 2.0, 40)
 	_grid.size     = Vector2(grid_w, grid_h)
 	page.add_child(_grid)
 
@@ -1201,3 +1211,33 @@ func _drop_to_world(item_id: String, count: int) -> void:
 		var offset := fwd * 2.0 + Vector3(randf_range(-0.3, 0.3), 0.5, randf_range(-0.3, 0.3))
 		inst.global_position = _player_ref.global_position + offset
 		_player_ref.get_parent().add_child(inst)
+
+
+func _build_skill_page(page: Control, panel_w: float, page_h: float) -> void:
+	page.clip_contents = true
+	var p := 10.0
+	
+	# ── Header: Title ──
+	var title := Label.new()
+	title.text     = "Fähigkeiten (Skills)"
+	title.position = Vector2(p, p)
+	title.size     = Vector2(220, 28)
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(0.90, 0.75, 0.45, 1.0))
+	page.add_child(title)
+	
+	# ── Separator ──
+	var sep := ColorRect.new()
+	sep.position = Vector2(p, p + 34)
+	sep.size     = Vector2(panel_w - p * 2, 1)
+	sep.color    = Color(0.45, 0.38, 0.28, 0.50)
+	page.add_child(sep)
+	
+	# ── VISUELLE SZENE LADEN ──
+	# WICHTIG: Passe den Dateipfad an, falls du die Szene woanders gespeichert hast!
+	var map_scene = load("res://scenes/ui/skill_map_ui.tscn")
+	if map_scene:
+		var map_inst = map_scene.instantiate()
+		map_inst.position = Vector2(0, 40) # Positioniert die Szene direkt unter dem Strich
+		map_inst.size = Vector2(panel_w, page_h - 40)
+		page.add_child(map_inst)
