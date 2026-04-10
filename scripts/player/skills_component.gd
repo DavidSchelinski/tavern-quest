@@ -61,16 +61,11 @@ func request_buy_skill(skill_id: String) -> void:
 		return
 
 	# Guard: Im Multiplayer muss die UUID gesetzt sein, bevor ein Kauf erlaubt wird.
-	# Verhindert, dass ein Client der noch nicht vollständig initialisiert ist
-	# (player_uuid leer) Daten auf dem Server verändert oder unter falscher UUID speichert.
+	# Verhindert Käufe eines noch nicht vollständig initialisierten Clients.
+	# Die Save-Datei darf dabei noch nicht existieren (neue Welt, erster Kauf) –
+	# update_player_data() legt sie beim ersten Speichern automatisch an.
 	if multiplayer.has_multiplayer_peer() and player_uuid.is_empty():
-		push_warning("SkillsComponent: request_buy_skill abgelehnt – UUID noch nicht gesetzt (Node nicht initialisiert).")
-		return
-
-	# Guard: Prüft ob eine Save-Datei für diesen Spieler existiert.
-	# Schützt vor Aktionen von Clients, die noch keine Welt geladen haben.
-	if not player_uuid.is_empty() and not SaveManager.player_file_exists(player_uuid):
-		push_warning("SkillsComponent: request_buy_skill abgelehnt – keine Save-Datei für '%s'." % player_uuid)
+		push_warning("SkillsComponent: request_buy_skill abgelehnt – UUID noch nicht gesetzt.")
 		return
 
 	# Serverseitige Validierung (Basis-Check: Punkte vorhanden, Skill nicht über Level-Cap)

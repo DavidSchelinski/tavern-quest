@@ -119,3 +119,45 @@ func get_slot(index: int) -> Variant:
 	if index < 0 or index >= SLOT_COUNT:
 		return null
 	return slots[index]
+
+
+# ── Save / Load ───────────────────────────────────────────────────────────────
+
+## Serialisiert alle Slots als JSON-fähiges Array.
+## Leere Slots werden als null gespeichert (Index-Erhalt für die UI).
+func get_save_data() -> Array:
+	var result: Array = []
+	for slot: Variant in slots:
+		if slot == null:
+			result.append(null)
+		else:
+			result.append({
+				"id":    (slot as Dictionary)["id"],
+				"count": (slot as Dictionary)["count"],
+			})
+	return result
+
+
+## Stellt Inventar-Zustand aus gespeichertem Array wieder her.
+## JSON lädt Zahlen als float → cast auf int nötig.
+func apply_save_data(data: Array) -> void:
+	slots.resize(SLOT_COUNT)
+	slots.fill(null)
+	for i: int in mini(data.size(), SLOT_COUNT):
+		var entry: Variant = data[i]
+		if entry == null:
+			slots[i] = null
+		elif entry is Dictionary and entry.has("id") and entry.has("count"):
+			slots[i] = {
+				"id":    (entry as Dictionary)["id"] as String,
+				"count": int((entry as Dictionary)["count"]),
+			}
+	inventory_changed.emit()
+
+
+## Server → Client: überträgt den vollständigen Inventar-Stand nach dem Spawn.
+## "any_peer" statt "authority": Die Node-Authority liegt beim Client,
+## aber der Server muss senden können (identisch zur Skills-Architektur).
+@rpc("any_peer", "call_local", "reliable")
+func sync_inventory(data: Array) -> void:
+	apply_save_data(data)

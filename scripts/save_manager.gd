@@ -138,4 +138,5 @@ func _default_player_data() -> Dictionary:
 		"hotbar":        ["", "", "", "", "", "", ""],
 		"points":        5,
 		"last_position": {"x": 0.0, "y": 1.0, "z": 22.0},
+		"inventory":     [],   # Array von {id, count} | null pro Slot
 	}
