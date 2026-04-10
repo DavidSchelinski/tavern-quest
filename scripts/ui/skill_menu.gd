@@ -16,6 +16,13 @@ var _base_canvas_size : Vector2 = Vector2(3000, 2000)
 
 func setup(player: Node) -> void:
 	_player = player
+	for btn in skill_buttons:
+		if btn != null:
+			btn.player_ref = player
+	# UI nach Server-Bestätigung eines Skill-Kaufs automatisch neu laden.
+	var skills: Node = player.get_node_or_null("Skills")
+	if skills != null and not skills.skill_data_synced.is_connected(refresh_ui):
+		skills.skill_data_synced.connect(refresh_ui)
 	call_deferred("refresh_ui")
 
 

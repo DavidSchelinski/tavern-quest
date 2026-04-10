@@ -1,6 +1,7 @@
 extends Panel
 
 @export var slot_index: int = 0
+var player_ref: Node = null
 
 
 func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
@@ -12,9 +13,9 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 
 
 func _drop_data(_at_position: Vector2, data: Variant) -> void:
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if player == null:
+	if player_ref == null:
 		return
+	var player: Node = player_ref
 
 	player.get_node("Skills").equip_skill(data["id"], slot_index)
 

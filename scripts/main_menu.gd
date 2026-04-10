@@ -23,6 +23,10 @@ var _cfg           := ConfigFile.new()
 var _rebind_action : String = ""
 var _rebind_btn    : Button = null
 
+# Welten-Auswahl
+var _world_menu    : WorldSelectionMenu
+var _pending_mode  : String = ""   # "solo" | "host" – gesetzt wenn Weltauswahl geöffnet wird
+
 var _fps_label        : Label
 var _master_slider    : HSlider
 var _fps_check        : CheckButton
@@ -134,13 +138,12 @@ func _build_ui() -> void:
 	col.add_child(quit_btn)
 
 	solo_btn.pressed.connect(func() -> void:
-		get_tree().change_scene_to_file(GAME_SCENE)
+		_pending_mode = "solo"
+		_world_menu.show_menu()
 	)
 	host_btn.pressed.connect(func() -> void:
-		_host_root.visible = true
-		_http.request("https://api.ipify.org")
-		_host_local_ip.text = NetworkManager.get_local_ip()
-		_host_public_ip.text = tr("HOST_FETCHING_IP")
+		_pending_mode = "host"
+		_world_menu.show_menu()
 	)
 	join_btn_m.pressed.connect(func() -> void:
 		_join_root.visible = true
@@ -158,6 +161,12 @@ func _build_ui() -> void:
 	_build_settings_overlay()
 	_build_host_overlay()
 	_build_join_overlay()
+
+	# Weltauswahl – muss nach den anderen Overlays hinzugefügt werden,
+	# damit es immer im Vordergrund liegt.
+	_world_menu = WorldSelectionMenu.new()
+	add_child(_world_menu)
+	_world_menu.world_confirmed.connect(_on_world_confirmed)
 
 
 func _make_button(label: String) -> Button:
@@ -777,6 +786,24 @@ func _make_overlay_root() -> Control:
 	root.add_child(c)
 
 	return root
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  WELTAUSWAHL
+# ──────────────────────────────────────────────────────────────────────────────
+
+## Wird aufgerufen, nachdem der Spieler eine Welt im WorldSelectionMenu bestätigt.
+func _on_world_confirmed(world_name: String) -> void:
+	SaveManager.set_world(world_name)   # Ordner anlegen + Pfad setzen
+	match _pending_mode:
+		"solo":
+			get_tree().change_scene_to_file(GAME_SCENE)
+		"host":
+			_host_root.visible   = true
+			_host_local_ip.text  = NetworkManager.get_local_ip()
+			_host_public_ip.text = tr("HOST_FETCHING_IP")
+			_http.request("https://api.ipify.org")
+	_pending_mode = ""
 
 
 ## Adds a full-rect MarginContainer with standard padding to a panel.

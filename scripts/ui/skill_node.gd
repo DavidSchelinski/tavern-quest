@@ -1,6 +1,7 @@
 extends Button
 
 @export var skill_data: SkillData
+var player_ref: Node = null
 
 
 func _ready() -> void:
@@ -37,33 +38,40 @@ func update_visual_state(is_unlocked: bool) -> void:
 
 func _on_skill_pressed() -> void:
 	print("Klick auf: ", skill_data.id)
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if player == null:
-		print("Kauf fehlgeschlagen! Kein Spieler gefunden.")
+	if player_ref == null:
 		return
-	var skills: Node = player.get_node_or_null("Skills")
+	var skills: Node = player_ref.get_node_or_null("Skills")
 	if skills == null:
 		print("Kauf fehlgeschlagen! Kein Skills-Node gefunden.")
 		return
+
 	print("Skillpunkte übrig: ", skills.skill_points)
-	if skills.can_unlock_skill(skill_data, 99):
-		skills.unlock_or_upgrade_skill(skill_data)
+
+	if not skills.can_unlock_skill(skill_data, 99):
+		print("Kauf fehlgeschlagen! Punkte: ", skills.skill_points, " | Voraussetzungen erfüllt? Prüfe Konsole.")
+		return
+
+	if multiplayer.has_multiplayer_peer():
+		# Multiplayer: Anfrage an Server schicken (Peer 1).
+		# Die UI wird nach der Server-Bestätigung via skill_data_synced-Signal aktualisiert.
+		print("Sende Kaufanfrage für '", skill_data.id, "' an Server...")
+		skills.request_buy_skill.rpc_id(1, skill_data.id)
+	else:
+		# Singleplayer: Direkt kaufen.
+		skills._do_unlock_skill(skill_data.id)
 		print("Skill gekauft: ", skill_data.id, " | Punkte jetzt: ", skills.skill_points)
 		update_visual_state(true)
 		var menu: Node = get_parent().get_parent()
 		if menu != null and menu.has_method("refresh_ui"):
 			menu.refresh_ui()
-	else:
-		print("Kauf fehlgeschlagen! Punkte: ", skills.skill_points, " | Voraussetzungen erfüllt? Prüfe Konsole.")
 
 
 func _get_drag_data(_at_position: Vector2) -> Variant:
 	if skill_data == null:
 		return null
-
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if player == null:
+	if player_ref == null:
 		return null
+	var player: Node = player_ref
 	var skills: Node = player.get_node_or_null("Skills")
 	if skills == null or skills.get_skill_level(skill_data.id) <= 0:
 		return null

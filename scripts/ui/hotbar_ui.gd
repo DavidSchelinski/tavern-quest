@@ -25,6 +25,9 @@ func _ready() -> void:
 
 func set_player(player: Node) -> void:
 	_player = player
+	for slot in _slot_panels:
+		if slot != null:
+			slot.player_ref = player
 
 
 func _build_ui() -> void:

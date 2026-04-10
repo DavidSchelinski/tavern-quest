@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 NetworkManager="*res://scripts/network_manager.gd"
+SaveManager="*res://scripts/save_manager.gd"
 LocaleManager="*res://scripts/locale_manager.gd"
 VoiceOver="*res://scripts/voice_over.gd"
 DialogManager="*res://scripts/dialog/dialog_manager.gd"
