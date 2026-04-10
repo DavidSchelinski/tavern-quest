@@ -69,6 +69,7 @@ func _build_ui() -> void:
 	anchor.offset_bottom = -52.0
 	anchor.offset_left   = -BAR_WIDTH * 0.5 - 6.0
 	anchor.offset_right  = BAR_WIDTH  * 0.5 + 6.0
+	anchor.mouse_filter  = Control.MOUSE_FILTER_IGNORE
 	add_child(anchor)
 
 	# Background panel
@@ -76,6 +77,7 @@ func _build_ui() -> void:
 	_panel.size = Vector2(BAR_WIDTH + 12.0, 34.0)
 	_panel.position = Vector2.ZERO
 	_panel.modulate.a = 0.0
+	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var bg_style := StyleBoxFlat.new()
 	bg_style.bg_color           = COLOR_BG
 	bg_style.corner_radius_top_left     = 4
@@ -87,8 +89,9 @@ func _build_ui() -> void:
 
 	# Bar track (dark background)
 	var track := Panel.new()
-	track.size     = Vector2(BAR_WIDTH, BAR_HEIGHT)
-	track.position = Vector2(6.0, 6.0)
+	track.size         = Vector2(BAR_WIDTH, BAR_HEIGHT)
+	track.position     = Vector2(6.0, 6.0)
+	track.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var track_style := StyleBoxFlat.new()
 	track_style.bg_color = Color(0.1, 0.1, 0.1, 0.8)
 	track_style.corner_radius_top_left     = 3
@@ -100,8 +103,9 @@ func _build_ui() -> void:
 
 	# Bar fill
 	_bar_fill = Panel.new()
-	_bar_fill.size     = Vector2(BAR_WIDTH, BAR_HEIGHT)
-	_bar_fill.position = Vector2(0.0, 0.0)
+	_bar_fill.size         = Vector2(BAR_WIDTH, BAR_HEIGHT)
+	_bar_fill.position     = Vector2(0.0, 0.0)
+	_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var fill_style := StyleBoxFlat.new()
 	fill_style.bg_color = COLOR_FULL
 	fill_style.corner_radius_top_left     = 3
@@ -117,6 +121,7 @@ func _build_ui() -> void:
 	_dot_row.position     = Vector2(6.0, 17.0)
 	_dot_row.alignment    = BoxContainer.ALIGNMENT_CENTER
 	_dot_row.add_theme_constant_override("separation", 5)
+	_dot_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.add_child(_dot_row)
 
 
@@ -136,11 +141,13 @@ func _make_dot(heavy: bool) -> TextureRect:
 	# Draw a small filled square as a colored dot via a nested Panel
 	var rect := TextureRect.new()
 	rect.custom_minimum_size = Vector2(12.0, 12.0)
-	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rect.stretch_mode        = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rect.mouse_filter        = Control.MOUSE_FILTER_IGNORE
 
 	var inner := Panel.new()
-	inner.size = Vector2(10.0, 10.0)
-	inner.position = Vector2(1.0, 1.0)
+	inner.size         = Vector2(10.0, 10.0)
+	inner.position     = Vector2(1.0, 1.0)
+	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var s := StyleBoxFlat.new()
 	# Light = gold circle, Heavy = red diamond-ish
 	s.bg_color = Color(1.0, 0.65, 0.0, 1.0) if not heavy else Color(0.9, 0.15, 0.1, 1.0)

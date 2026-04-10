@@ -35,6 +35,9 @@ var _split_slot   : int     = -1
 
 var _placeholder_cache : Dictionary = {}
 
+# ── Skill page ───────────────────────────────────────────────────────────────
+var _skill_map_inst : Node = null
+
 # ── Character page ────────────────────────────────────────────────────────────
 var _stat_points_label : Label      = null
 var _stat_val_labels   : Dictionary = {}   # stat → Label
@@ -69,6 +72,8 @@ func _ready() -> void:
 
 func open(player: Node3D) -> void:
 	_player_ref = player
+	if _skill_map_inst != null and _skill_map_inst.has_method("setup"):
+		_skill_map_inst.setup(_player_ref)
 	visible = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_switch_tab(_current_tab)
@@ -1219,25 +1224,35 @@ func _build_skill_page(page: Control, panel_w: float, page_h: float) -> void:
 	
 	# ── Header: Title ──
 	var title := Label.new()
+	title.name     = "SkillTitle"
 	title.text     = "Fähigkeiten (Skills)"
 	title.position = Vector2(p, p)
-	title.size     = Vector2(220, 28)
+	title.size     = Vector2(500, 28)
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", Color(0.90, 0.75, 0.45, 1.0))
 	page.add_child(title)
 	
+	var sk_pts_lbl := Label.new()
+	sk_pts_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	sk_pts_lbl.position = Vector2(p, p)
+	sk_pts_lbl.size     = Vector2(panel_w - p * 2, 28)
+	sk_pts_lbl.add_theme_font_size_override("font_size", 14)
+	sk_pts_lbl.add_theme_color_override("font_color", Color(0.45, 0.88, 0.45, 1.0))
+	page.add_child(sk_pts_lbl)
+
 	# ── Separator ──
 	var sep := ColorRect.new()
 	sep.position = Vector2(p, p + 34)
 	sep.size     = Vector2(panel_w - p * 2, 1)
 	sep.color    = Color(0.45, 0.38, 0.28, 0.50)
 	page.add_child(sep)
-	
+
 	# ── VISUELLE SZENE LADEN ──
-	# WICHTIG: Passe den Dateipfad an, falls du die Szene woanders gespeichert hast!
 	var map_scene = load("res://scenes/ui/skill_map_ui.tscn")
 	if map_scene:
 		var map_inst = map_scene.instantiate()
-		map_inst.position = Vector2(0, 40) # Positioniert die Szene direkt unter dem Strich
+		map_inst.position = Vector2(0, 40)
 		map_inst.size = Vector2(panel_w, page_h - 40)
+		map_inst.points_label = sk_pts_lbl
 		page.add_child(map_inst)
+		_skill_map_inst = map_inst

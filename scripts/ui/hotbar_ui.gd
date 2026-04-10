@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const HOTBAR_SLOT_SCRIPT := "res://scripts/ui/hotbar_slot.gd"
+
 const SLOT_COUNT : int   = 7
 const SLOT_SIZE  : float = 52.0
 const SLOT_GAP   : float = 6.0
@@ -41,6 +43,10 @@ func _build_ui() -> void:
 		var x : float = i * (SLOT_SIZE + SLOT_GAP)
 
 		var slot := Panel.new()
+		var slot_script: Script = load(HOTBAR_SLOT_SCRIPT)
+		if slot_script:
+			slot.set_script(slot_script)
+			slot.slot_index = i
 		slot.position = Vector2(x, 0.0)
 		slot.size     = Vector2(SLOT_SIZE, SLOT_SIZE)
 		var bg_style := StyleBoxFlat.new()

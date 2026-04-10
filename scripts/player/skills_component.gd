@@ -9,8 +9,12 @@ var _unlocked_skills : Dictionary = {}
 # 7 hotbar slots, each holds a skill id or "" for empty.
 var _hotbar : Array = ["", "", "", "", "", "", ""]
 
+@export var skill_points : int = 5
+
 
 func can_unlock_skill(skill_data: SkillData, current_player_level: int) -> bool:
+	if skill_points <= 0:
+		return false
 	if current_player_level < skill_data.required_player_level:
 		return false
 	var current_level : int = _unlocked_skills.get(skill_data.id, 0) as int
@@ -25,6 +29,11 @@ func can_unlock_skill(skill_data: SkillData, current_player_level: int) -> bool:
 func unlock_or_upgrade_skill(skill_data: SkillData) -> void:
 	var current_level : int = _unlocked_skills.get(skill_data.id, 0) as int
 	_unlocked_skills[skill_data.id] = current_level + 1
+	skill_points -= 1
+
+
+func get_skill_level(skill_id: String) -> int:
+	return _unlocked_skills.get(skill_id, 0) as int
 
 
 func equip_skill(skill_id: String, hotbar_index: int) -> void:
