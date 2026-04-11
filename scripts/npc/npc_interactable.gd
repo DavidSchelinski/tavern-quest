@@ -27,7 +27,7 @@ func _ready() -> void:
 
 func _build_hint() -> void:
 	_hint = Label3D.new()
-	_hint.text             = "[E] " + tr("ACTION_INTERACT")
+	_hint.text             = "[F] " + tr("ACTION_INTERACT")
 	_hint.billboard        = BaseMaterial3D.BILLBOARD_ENABLED
 	_hint.font_size        = 24
 	_hint.pixel_size       = 0.007

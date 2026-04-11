@@ -3,6 +3,98 @@
 [ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://scenes/ui/login_screen.tscn" id="2_login"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+bg_color = Color(0.14, 0.11, 0.08, 0.9)
+border_color = Color(0.55, 0.45, 0.30, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+bg_color = Color(0.22, 0.17, 0.12, 0.95)
+border_color = Color(0.75, 0.60, 0.35, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
+bg_color = Color(0.18, 0.14, 0.10, 1)
+border_color = Color(0.85, 0.70, 0.40, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_sec_normal"]
+bg_color = Color(0.10, 0.08, 0.06, 0.7)
+border_color = Color(0.40, 0.34, 0.24, 0.7)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_sec_hover"]
+bg_color = Color(0.16, 0.13, 0.10, 0.85)
+border_color = Color(0.60, 0.50, 0.32, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.10, 0.08, 0.06, 0.95)
+border_color = Color(0.55, 0.45, 0.30, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="MainMenu" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -27,7 +119,31 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.08, 0.06, 0.04, 1)
+color = Color(0.065, 0.05, 0.04, 1)
+
+[node name="Vignette" type="ColorRect" parent="MenuRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.12, 0.08, 0.05, 0.3)
+
+[node name="TopDecor" type="ColorRect" parent="MenuRoot"]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 3.0
+color = Color(0.75, 0.60, 0.35, 0.8)
+
+[node name="BottomDecor" type="ColorRect" parent="MenuRoot"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -3.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.75, 0.60, 0.35, 0.8)
 
 [node name="FPSLabel" type="Label" parent="MenuRoot"]
 layout_mode = 1
@@ -47,73 +163,148 @@ anchor_bottom = 1.0
 
 [node name="Column" type="VBoxContainer" parent="MenuRoot/Center"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 0)
-theme_override_constants/separation = 14
+custom_minimum_size = Vector2(420, 0)
+theme_override_constants/separation = 10
+
+[node name="TopSpacer" type="Control" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 10)
+
+[node name="TitleDecorTop" type="ColorRect" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 1)
+color = Color(0.55, 0.45, 0.30, 0.5)
 
 [node name="Title" type="Label" parent="MenuRoot/Center/Column"]
 layout_mode = 2
 text = "Tavern Quest"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 56
+theme_override_colors/font_color = Color(0.95, 0.78, 0.40, 1)
+theme_override_colors/font_shadow_color = Color(0.2, 0.12, 0.05, 0.6)
+theme_override_font_sizes/font_size = 58
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 3
 
 [node name="Subtitle" type="Label" parent="MenuRoot/Center/Column"]
 layout_mode = 2
 text = "Wähle deinen Weg"
 horizontal_alignment = 1
-modulate = Color(0.6, 0.6, 0.6, 1)
+theme_override_colors/font_color = Color(0.65, 0.58, 0.45, 0.8)
+theme_override_font_sizes/font_size = 16
+
+[node name="TitleDecorBottom" type="ColorRect" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 1)
+color = Color(0.55, 0.45, 0.30, 0.5)
 
 [node name="PlayerNameLabel" type="Label" parent="MenuRoot/Center/Column"]
 layout_mode = 2
 text = ""
 horizontal_alignment = 1
-modulate = Color(0.8, 0.75, 0.5, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.88, 0.78, 0.50, 1)
+theme_override_font_sizes/font_size = 15
 
 [node name="Spacer" type="Control" parent="MenuRoot/Center/Column"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 14)
 
 [node name="SoloButton" type="Button" parent="MenuRoot/Center/Column"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 54)
-text = "Solo spielen"
+custom_minimum_size = Vector2(420, 50)
+theme_override_colors/font_color = Color(0.92, 0.82, 0.60, 1)
+theme_override_colors/font_hover_color = Color(1, 0.90, 0.65, 1)
+theme_override_colors/font_pressed_color = Color(0.85, 0.75, 0.50, 1)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "Solo spielen"
 
 [node name="HostButton" type="Button" parent="MenuRoot/Center/Column"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 54)
-text = "Welt hosten"
+custom_minimum_size = Vector2(420, 50)
+theme_override_colors/font_color = Color(0.92, 0.82, 0.60, 1)
+theme_override_colors/font_hover_color = Color(1, 0.90, 0.65, 1)
+theme_override_colors/font_pressed_color = Color(0.85, 0.75, 0.50, 1)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "Welt hosten"
 
 [node name="JoinButton" type="Button" parent="MenuRoot/Center/Column"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 54)
-text = "Beitreten"
+custom_minimum_size = Vector2(420, 50)
+theme_override_colors/font_color = Color(0.92, 0.82, 0.60, 1)
+theme_override_colors/font_hover_color = Color(1, 0.90, 0.65, 1)
+theme_override_colors/font_pressed_color = Color(0.85, 0.75, 0.50, 1)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "Beitreten"
 
 [node name="SettingsButton" type="Button" parent="MenuRoot/Center/Column"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 54)
-text = "Einstellungen"
+custom_minimum_size = Vector2(420, 50)
+theme_override_colors/font_color = Color(0.92, 0.82, 0.60, 1)
+theme_override_colors/font_hover_color = Color(1, 0.90, 0.65, 1)
+theme_override_colors/font_pressed_color = Color(0.85, 0.75, 0.50, 1)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "Einstellungen"
+
+[node name="ButtonSpacer" type="Control" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 6)
 
 [node name="ChangePlayerButton" type="Button" parent="MenuRoot/Center/Column"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 54)
+custom_minimum_size = Vector2(420, 40)
+theme_override_colors/font_color = Color(0.65, 0.60, 0.50, 0.85)
+theme_override_colors/font_hover_color = Color(0.85, 0.78, 0.58, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_sec_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_sec_hover")
 text = "Spieler wechseln"
-modulate = Color(0.8, 0.8, 0.8, 1)
 
 [node name="RunTestsButton" type="Button" parent="MenuRoot/Center/Column"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 44)
+custom_minimum_size = Vector2(420, 36)
+theme_override_colors/font_color = Color(0.55, 0.55, 0.40, 0.7)
+theme_override_colors/font_hover_color = Color(0.75, 0.72, 0.50, 0.9)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_sec_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_sec_hover")
 text = "[Dev] Tests ausführen"
-modulate = Color(0.8, 0.8, 0.5, 1)
 
 [node name="QuitButton" type="Button" parent="MenuRoot/Center/Column"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 54)
+custom_minimum_size = Vector2(420, 40)
+theme_override_colors/font_color = Color(0.65, 0.60, 0.50, 0.85)
+theme_override_colors/font_hover_color = Color(0.85, 0.78, 0.58, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_sec_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_sec_hover")
 text = "Beenden"
-theme_override_font_sizes/font_size = 18
+
+[node name="VersionLabel" type="Label" parent="MenuRoot"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -30.0
+offset_right = -12.0
+offset_bottom = -8.0
+text = "v0.1 Alpha"
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.45, 0.40, 0.32, 0.5)
+theme_override_font_sizes/font_size = 12
 
 [node name="SettingsOverlay" type="Control" parent="MenuRoot"]
 layout_mode = 1
@@ -127,7 +318,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.65)
+color = Color(0, 0, 0, 0.7)
 
 [node name="Center" type="CenterContainer" parent="MenuRoot/SettingsOverlay"]
 layout_mode = 1
@@ -137,6 +328,7 @@ anchor_bottom = 1.0
 
 [node name="Panel" type="Panel" parent="MenuRoot/SettingsOverlay/Center"]
 custom_minimum_size = Vector2(680, 580)
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="Margin" type="MarginContainer" parent="MenuRoot/SettingsOverlay/Center/Panel"]
 layout_mode = 1
@@ -156,6 +348,7 @@ theme_override_constants/separation = 12
 layout_mode = 2
 text = "Einstellungen"
 horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.95, 0.78, 0.40, 1)
 theme_override_font_sizes/font_size = 26
 
 [node name="Tabs" type="TabContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox"]
@@ -276,6 +469,9 @@ autowrap_mode = 3
 
 [node name="CloseSettingsButton" type="Button" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.78, 0.55, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "Schließen"
 
 [node name="HostOverlay" type="Control" parent="MenuRoot"]
@@ -290,7 +486,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.65)
+color = Color(0, 0, 0, 0.7)
 
 [node name="Center" type="CenterContainer" parent="MenuRoot/HostOverlay"]
 layout_mode = 1
@@ -300,6 +496,7 @@ anchor_bottom = 1.0
 
 [node name="Panel" type="Panel" parent="MenuRoot/HostOverlay/Center"]
 custom_minimum_size = Vector2(520, 380)
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="Margin" type="MarginContainer" parent="MenuRoot/HostOverlay/Center/Panel"]
 layout_mode = 1
@@ -319,6 +516,7 @@ theme_override_constants/separation = 16
 layout_mode = 2
 text = "Welt hosten"
 horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.95, 0.78, 0.40, 1)
 theme_override_font_sizes/font_size = 24
 
 [node name="LocalIPRow" type="HBoxContainer" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
@@ -328,10 +526,12 @@ layout_mode = 2
 layout_mode = 2
 custom_minimum_size = Vector2(140, 0)
 text = "Lokale IP:"
+theme_override_colors/font_color = Color(0.7, 0.65, 0.55, 1)
 
 [node name="LocalIPValue" type="Label" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/LocalIPRow"]
 layout_mode = 2
 text = "–"
+theme_override_colors/font_color = Color(0.90, 0.82, 0.60, 1)
 
 [node name="PublicIPRow" type="HBoxContainer" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
 layout_mode = 2
@@ -340,10 +540,12 @@ layout_mode = 2
 layout_mode = 2
 custom_minimum_size = Vector2(140, 0)
 text = "Öffentliche IP:"
+theme_override_colors/font_color = Color(0.7, 0.65, 0.55, 1)
 
 [node name="PublicIPValue" type="Label" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/PublicIPRow"]
 layout_mode = 2
 text = "–"
+theme_override_colors/font_color = Color(0.90, 0.82, 0.60, 1)
 
 [node name="PortRow" type="HBoxContainer" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
 layout_mode = 2
@@ -352,6 +554,7 @@ layout_mode = 2
 layout_mode = 2
 custom_minimum_size = Vector2(140, 0)
 text = "Port:"
+theme_override_colors/font_color = Color(0.7, 0.65, 0.55, 1)
 
 [node name="PortInput" type="LineEdit" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/PortRow"]
 layout_mode = 2
@@ -361,7 +564,7 @@ text = "7777"
 [node name="PortInfo" type="Label" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
 layout_mode = 2
 text = "Andere Spieler können über diese IP und Port beitreten."
-modulate = Color(0.6, 0.6, 0.6, 1)
+theme_override_colors/font_color = Color(0.55, 0.50, 0.42, 0.8)
 autowrap_mode = 3
 
 [node name="Spacer" type="Control" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
@@ -375,11 +578,17 @@ theme_override_constants/separation = 12
 [node name="HostCancelButton" type="Button" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/HostButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.75, 0.65, 0.50, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_sec_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_sec_hover")
 text = "Abbrechen"
 
 [node name="HostStartButton" type="Button" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/HostButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.82, 0.60, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "Server starten"
 
 [node name="JoinOverlay" type="Control" parent="MenuRoot"]
@@ -394,7 +603,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.65)
+color = Color(0, 0, 0, 0.7)
 
 [node name="Center" type="CenterContainer" parent="MenuRoot/JoinOverlay"]
 layout_mode = 1
@@ -404,6 +613,7 @@ anchor_bottom = 1.0
 
 [node name="Panel" type="Panel" parent="MenuRoot/JoinOverlay/Center"]
 custom_minimum_size = Vector2(540, 500)
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="Margin" type="MarginContainer" parent="MenuRoot/JoinOverlay/Center/Panel"]
 layout_mode = 1
@@ -423,12 +633,13 @@ theme_override_constants/separation = 12
 layout_mode = 2
 text = "Server beitreten"
 horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.95, 0.78, 0.40, 1)
 theme_override_font_sizes/font_size = 24
 
 [node name="LANLabel" type="Label" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
 layout_mode = 2
 text = "LAN-Server:"
-modulate = Color(0.75, 0.75, 0.75, 1)
+theme_override_colors/font_color = Color(0.7, 0.65, 0.55, 0.9)
 
 [node name="ServerList" type="ItemList" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
 layout_mode = 2
@@ -438,7 +649,7 @@ size_flags_vertical = 3
 [node name="ManualLabel" type="Label" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
 layout_mode = 2
 text = "Manuell:"
-modulate = Color(0.75, 0.75, 0.75, 1)
+theme_override_colors/font_color = Color(0.7, 0.65, 0.55, 0.9)
 
 [node name="IPRow" type="HBoxContainer" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
 layout_mode = 2
@@ -447,6 +658,7 @@ layout_mode = 2
 layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
 text = "IP-Adresse:"
+theme_override_colors/font_color = Color(0.7, 0.65, 0.55, 1)
 
 [node name="IPInput" type="LineEdit" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox/IPRow"]
 layout_mode = 2
@@ -460,6 +672,7 @@ layout_mode = 2
 layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
 text = "Port:"
+theme_override_colors/font_color = Color(0.7, 0.65, 0.55, 1)
 
 [node name="JoinPortInput" type="LineEdit" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox/JoinPortRow"]
 layout_mode = 2
@@ -469,7 +682,7 @@ text = "7777"
 [node name="JoinStatusLabel" type="Label" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
 layout_mode = 2
 text = ""
-modulate = Color(1, 0.5, 0.5, 1)
+theme_override_colors/font_color = Color(0.92, 0.40, 0.35, 1)
 horizontal_alignment = 1
 
 [node name="JoinButtons" type="HBoxContainer" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
@@ -479,11 +692,17 @@ theme_override_constants/separation = 12
 [node name="JoinCancelButton" type="Button" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox/JoinButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.75, 0.65, 0.50, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_sec_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_sec_hover")
 text = "Abbrechen"
 
 [node name="JoinConnectButton" type="Button" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox/JoinButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.82, 0.60, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "Verbinden"
 
 [node name="WorldSelectionMenu" type="Control" parent="."]

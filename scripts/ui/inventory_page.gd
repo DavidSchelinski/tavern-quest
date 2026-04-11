@@ -112,17 +112,18 @@ func _build_equipment_panel(start_x: float, start_y: float) -> void:
 	# Layout: centered character silhouette-style
 	var slot_w := 68.0
 	var slot_h := 68.0
-	var gap := 8.0
+	var gap := 10.0
 	var center_x := start_x + 130.0
+	var row_h := slot_h + gap
 
 	var positions : Dictionary = {
 		"helm":       Vector2(center_x - slot_w / 2, start_y),
-		"neck":       Vector2(center_x - slot_w - gap, start_y + slot_h + gap),
-		"torso":      Vector2(center_x - slot_w / 2, start_y + slot_h + gap),
-		"left_hand":  Vector2(center_x - slot_w - gap - slot_w, start_y + (slot_h + gap) * 2),
-		"right_hand": Vector2(center_x + slot_w + gap, start_y + (slot_h + gap) * 2),
-		"pants":      Vector2(center_x - slot_w / 2, start_y + (slot_h + gap) * 3),
-		"shoes":      Vector2(center_x - slot_w / 2, start_y + (slot_h + gap) * 4),
+		"neck":       Vector2(center_x + slot_w / 2 + gap, start_y + row_h * 0.5),
+		"torso":      Vector2(center_x - slot_w / 2, start_y + row_h),
+		"left_hand":  Vector2(center_x - slot_w / 2 - slot_w - gap, start_y + row_h),
+		"right_hand": Vector2(center_x + slot_w / 2 + gap, start_y + row_h),
+		"pants":      Vector2(center_x - slot_w / 2, start_y + row_h * 2),
+		"shoes":      Vector2(center_x - slot_w / 2, start_y + row_h * 3),
 	}
 
 	for slot_name in EQUIP_SLOTS:

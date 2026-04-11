@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/skills/skill_data.gd" id="1_sd"]
+
+[resource]
+script = ExtResource("1_sd")
+id = "energy_slam"
+display_name = "Himmelsklinge"
+description = "Lässt eine gewaltige Energieklinge vom Himmel herabstürzen."
+max_level = 5
+required_player_level = 1
+base_stamina_cost = 30.0
+base_damage_multiplier = 25.0
+cooldown = 5.0
+prerequisite_skills = Array[String](["energy_thrust"])
+damage_per_level = 7.0
+stamina_cost_per_level = 4.0
+cooldown_reduction_per_level = 0.3

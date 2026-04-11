@@ -18,6 +18,7 @@ const ACTIONS : Dictionary = {
 	"jump"         : "ACTION_JUMP",
 	"sprint"       : "ACTION_SPRINT",
 	"interact"     : "ACTION_INTERACT",
+	"pickup"       : "ACTION_PICKUP",
 }
 
 const LOCALES := [

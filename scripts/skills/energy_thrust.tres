@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/skills/skill_data.gd" id="1_sd"]
+
+[resource]
+script = ExtResource("1_sd")
+id = "energy_thrust"
+display_name = "Energiestoß"
+description = "Schleudert einen durchdringenden blauen Energiestoß nach vorne."
+max_level = 5
+required_player_level = 1
+base_stamina_cost = 20.0
+base_damage_multiplier = 18.0
+cooldown = 3.0
+prerequisite_skills = Array[String](["energy_slash_h"])
+damage_per_level = 5.0
+stamina_cost_per_level = 3.0
+cooldown_reduction_per_level = 0.2

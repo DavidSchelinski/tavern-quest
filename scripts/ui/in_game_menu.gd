@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-## InGame-Menü mit 4 Tabs: Inventar, Quests, Charakter, Skills.
+## InGame-Menü mit 5 Tabs: Inventar, Quests, Charakter, Skills, Abenteuergruppe.
 ## Alle Seiten sind als eigene Szenen im Editor sichtbar.
 
 signal closed
@@ -45,6 +45,10 @@ func open(player: Node3D) -> void:
 	var skill_page := _pages[3]
 	if skill_page.has_method("setup"):
 		skill_page.setup(player)
+
+	var group_page := _pages[4]
+	if group_page.has_method("setup"):
+		group_page.setup(player)
 
 	visible = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -133,6 +137,14 @@ func _build_ui() -> void:
 	content.add_child(skill_page)
 	_pages.append(skill_page)
 
+	# Page 4 - Adventure Group
+	var group_page := Control.new()
+	var group_script := load("res://scripts/ui/adventure_group_page.gd")
+	group_page.set_script(group_script)
+	group_page.size = Vector2(PANEL_W, CONTENT_H)
+	content.add_child(group_page)
+	_pages.append(group_page)
+
 	# Floating held-item icon
 	_held_icon = TextureRect.new()
 	_held_icon.custom_minimum_size = Vector2(60, 60)
@@ -154,7 +166,7 @@ func _build_ui() -> void:
 
 
 func _build_tab_strip(parent: Control, panel_w: float) -> void:
-	var labels := ["Inventar", "Quests", "Charakter", "Skills"]
+	var labels := ["Inventar", "Quests", "Charakter", "Skills", "Gruppe"]
 	var tab_w := panel_w / labels.size()
 
 	for i in labels.size():

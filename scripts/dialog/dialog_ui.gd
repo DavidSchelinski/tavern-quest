@@ -77,10 +77,10 @@ func _build_ui() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 
-	# Bottom-aligned dialog box
+	# Bottom-aligned dialog box (max height 320, auto-sizes with content)
 	var anchor := Control.new()
 	anchor.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	anchor.offset_top    = -260
+	anchor.offset_top    = -320
 	anchor.offset_left   = 40
 	anchor.offset_right  = -40
 	anchor.offset_bottom = -30
@@ -116,14 +116,24 @@ func _build_ui() -> void:
 	_text_lbl.scroll_active = false
 	vbox.add_child(_text_lbl)
 
-	# Choices container
+	# Choices container inside a ScrollContainer to handle overflow
+	var choices_scroll := ScrollContainer.new()
+	choices_scroll.size_flags_vertical = Control.SIZE_SHRINK_END
+	choices_scroll.custom_minimum_size = Vector2(0, 0)
+	# Cap the choices area height so it doesn't push outside the panel
+	choices_scroll.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	choices_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	choices_scroll.add_theme_constant_override("v_scroll_bar", 4)
+	vbox.add_child(choices_scroll)
+
 	_choices_box = VBoxContainer.new()
+	_choices_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_choices_box.add_theme_constant_override("separation", 4)
-	vbox.add_child(_choices_box)
+	choices_scroll.add_child(_choices_box)
 
 	# Advance hint (for choiceless nodes)
 	_advance_hint = Label.new()
-	_advance_hint.text = "[E]"
+	_advance_hint.text = "[F]"
 	_advance_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_advance_hint.modulate = Color(0.6, 0.6, 0.6)
 	_advance_hint.visible = false

@@ -2,6 +2,66 @@
 
 [ext_resource type="Script" path="res://scripts/ui/login_screen.gd" id="1_login"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.10, 0.08, 0.06, 0.95)
+border_color = Color(0.55, 0.45, 0.30, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
+bg_color = Color(0.14, 0.11, 0.08, 0.9)
+border_color = Color(0.55, 0.45, 0.30, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+bg_color = Color(0.22, 0.17, 0.12, 0.95)
+border_color = Color(0.75, 0.60, 0.35, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_del"]
+bg_color = Color(0.18, 0.08, 0.06, 0.8)
+border_color = Color(0.60, 0.30, 0.25, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_del_hover"]
+bg_color = Color(0.28, 0.10, 0.08, 0.9)
+border_color = Color(0.75, 0.35, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [node name="LoginScreen" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -16,7 +76,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.08, 0.06, 0.04, 1)
+color = Color(0.065, 0.05, 0.04, 1)
+
+[node name="TopDecor" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 3.0
+color = Color(0.75, 0.60, 0.35, 0.8)
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -25,7 +91,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Panel" type="Panel" parent="Center"]
-custom_minimum_size = Vector2(500, 520)
+custom_minimum_size = Vector2(500, 540)
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="Margin" type="MarginContainer" parent="Center/Panel"]
 layout_mode = 1
@@ -45,13 +112,17 @@ theme_override_constants/separation = 14
 layout_mode = 2
 text = "Tavern Quest"
 horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.95, 0.78, 0.40, 1)
+theme_override_colors/font_shadow_color = Color(0.2, 0.12, 0.05, 0.6)
 theme_override_font_sizes/font_size = 48
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 3
 
 [node name="Subtitle" type="Label" parent="Center/Panel/Margin/VBox"]
 layout_mode = 2
 text = "Wer bist du, Abenteurer?"
 horizontal_alignment = 1
-modulate = Color(0.75, 0.75, 0.75, 1)
+theme_override_colors/font_color = Color(0.65, 0.58, 0.45, 0.8)
 
 [node name="Spacer1" type="Control" parent="Center/Panel/Margin/VBox"]
 layout_mode = 2
@@ -79,17 +150,25 @@ layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 48)
 text = "Spielen"
+theme_override_colors/font_color = Color(0.92, 0.82, 0.60, 1)
+theme_override_colors/font_hover_color = Color(1, 0.90, 0.65, 1)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 
 [node name="DeleteButton" type="Button" parent="Center/Panel/Margin/VBox/ButtonRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(120, 48)
 text = "Löschen"
+theme_override_colors/font_color = Color(0.75, 0.40, 0.35, 0.85)
+theme_override_colors/font_hover_color = Color(0.92, 0.45, 0.38, 1)
 theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_del")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_del_hover")
 
 [node name="ErrorLabel" type="Label" parent="Center/Panel/Margin/VBox"]
 layout_mode = 2
-modulate = Color(1, 0.4, 0.4, 1)
+theme_override_colors/font_color = Color(0.92, 0.40, 0.35, 1)
 horizontal_alignment = 1
 autowrap_mode = 3
 
@@ -99,7 +178,7 @@ layout_mode = 2
 [node name="ProfilesLabel" type="Label" parent="Center/Panel/Margin/VBox"]
 layout_mode = 2
 text = "Vorhandene Profile (klicken zum Auswählen):"
-modulate = Color(0.75, 0.75, 0.75, 1)
+theme_override_colors/font_color = Color(0.65, 0.58, 0.45, 0.8)
 theme_override_font_sizes/font_size = 13
 
 [node name="ProfileList" type="ItemList" parent="Center/Panel/Margin/VBox"]

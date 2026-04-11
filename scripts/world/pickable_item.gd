@@ -82,4 +82,7 @@ func on_look_away() -> void:
 
 @rpc("call_local", "reliable")
 func network_despawn() -> void:
+	# Track this item as removed so new guests don't see it
+	if multiplayer.is_server() or not multiplayer.has_multiplayer_peer():
+		WorldState.register_removed_item(get_path())
 	queue_free()

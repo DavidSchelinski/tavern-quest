@@ -143,10 +143,10 @@ func _collect_save_data(player: Node) -> Dictionary:
 
 	var skills: Node = player.get_node_or_null("Skills")
 	if skills != null:
-		# Solo/Host: Position direkt vom Node lesen (immer aktuell).
-		# Gäste: last_position wird via report_position RPC aktuell gehalten;
-		# player.position auf dem Server ist durch unreliable UDP nicht zuverlässig.
-		if not multiplayer.has_multiplayer_peer() or player.is_multiplayer_authority():
+		# Server speichert Position für ALLE Spieler (Host + Gäste).
+		# Der MultiplayerSynchronizer hält player.position auf dem Server aktuell.
+		# report_position dient als zusätzliches Backup.
+		if not multiplayer.has_multiplayer_peer() or multiplayer.is_server():
 			skills.last_position = player.position
 		data.merge(skills.get_save_data())
 
@@ -193,6 +193,20 @@ func _sync_all_to_client(peer_id: int, player: Node) -> void:
 	var stats: Node = player.get_node_or_null("Stats")
 	if stats != null:
 		stats.sync_stats_data.rpc_id(peer_id, stats.stat_points, stats.stats.duplicate())
+
+	# Sync world state: remove items that were already picked up
+	var removed: Array = WorldState.removed_items.duplicate()
+	if not removed.is_empty():
+		_rpc_sync_removed_items.rpc_id(peer_id, removed)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_sync_removed_items(removed_paths: Array) -> void:
+	# Client-side: remove items that the server says are gone
+	for path_str: Variant in removed_paths:
+		var node := get_tree().root.get_node_or_null(str(path_str))
+		if node != null:
+			node.queue_free()
 
 
 func _ensure_safe_position(player: CharacterBody3D) -> void:

@@ -6,6 +6,9 @@
 [ext_resource type="Resource" uid="uid://2q6ajlckjeke" path="res://scripts/skills/skill_2.tres" id="4_wjsxk"]
 [ext_resource type="Resource" uid="uid://voggfe6fdats" path="res://scripts/skills/skill_3.tres" id="5_igcq4"]
 [ext_resource type="Script" uid="uid://d3u5fhxs033ys" path="res://scripts/ui/skill_node.gd" id="6_g6321"]
+[ext_resource type="Resource" path="res://scripts/skills/energy_slash_h.tres" id="7_eslash"]
+[ext_resource type="Resource" path="res://scripts/skills/energy_thrust.tres" id="8_ethrust"]
+[ext_resource type="Resource" path="res://scripts/skills/energy_slam.tres" id="9_eslam"]
 
 [sub_resource type="Theme" id="Theme_yq52q"]
 default_font_size = 18
@@ -17,8 +20,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_qe8po")
-skill_buttons = [NodePath("MapCanvas/Button"), NodePath("MapCanvas/Button2"), NodePath("MapCanvas/Button3")]
-skill_data_refs = Array[ExtResource("2_7p4kb")]([ExtResource("3_g6321"), ExtResource("4_wjsxk"), ExtResource("5_igcq4")])
+skill_buttons = [NodePath("MapCanvas/Button"), NodePath("MapCanvas/Button2"), NodePath("MapCanvas/Button3"), NodePath("MapCanvas/BtnESlash"), NodePath("MapCanvas/BtnEThrust"), NodePath("MapCanvas/BtnESlam")]
+skill_data_refs = Array[ExtResource("2_7p4kb")]([ExtResource("3_g6321"), ExtResource("4_wjsxk"), ExtResource("5_igcq4"), ExtResource("7_eslash"), ExtResource("8_ethrust"), ExtResource("9_eslam")])
 
 [node name="MapCanvas" type="Control" parent="." unique_id=902883759]
 custom_minimum_size = Vector2(3000, 2000)
@@ -64,3 +67,36 @@ theme = SubResource("Theme_yq52q")
 text = "Skill 3"
 script = ExtResource("6_g6321")
 skill_data = ExtResource("5_igcq4")
+
+[node name="BtnESlash" type="Button" parent="MapCanvas"]
+layout_mode = 0
+offset_left = 1100.0
+offset_top = 194.0
+offset_right = 1260.0
+offset_bottom = 257.0
+theme = SubResource("Theme_yq52q")
+text = "Energieklinge"
+script = ExtResource("6_g6321")
+skill_data = ExtResource("7_eslash")
+
+[node name="BtnEThrust" type="Button" parent="MapCanvas"]
+layout_mode = 0
+offset_left = 1350.0
+offset_top = 340.0
+offset_right = 1510.0
+offset_bottom = 403.0
+theme = SubResource("Theme_yq52q")
+text = "Energiestoß"
+script = ExtResource("6_g6321")
+skill_data = ExtResource("8_ethrust")
+
+[node name="BtnESlam" type="Button" parent="MapCanvas"]
+layout_mode = 0
+offset_left = 1230.0
+offset_top = 530.0
+offset_right = 1390.0
+offset_bottom = 593.0
+theme = SubResource("Theme_yq52q")
+text = "Himmelsklinge"
+script = ExtResource("6_g6321")
+skill_data = ExtResource("9_eslam")

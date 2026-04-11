@@ -24,7 +24,9 @@
       "mcp__godot__get_uid",
       "Bash(xxd \"C:/Users/konst/tavern-quest/scripts/inventory/inventory_manager.gd\")",
       "Bash(xargs grep:*)",
-      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && cat \"{}\"')"
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && cat \"{}\"')",
+      "mcp__godot__update_project_uids",
+      "mcp__godot__launch_editor"
     ]
   }
 }

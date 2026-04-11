@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/skills/skill_data.gd" id="1_sd"]
+
+[resource]
+script = ExtResource("1_sd")
+id = "energy_slash_h"
+display_name = "Energieklinge"
+description = "Entfesselt eine horizontale blaue Energieklinge, die vor dem Spieler hinwegfegt."
+max_level = 5
+required_player_level = 1
+base_stamina_cost = 15.0
+base_damage_multiplier = 12.0
+cooldown = 2.0
+damage_per_level = 4.0
+stamina_cost_per_level = 2.0
+cooldown_reduction_per_level = 0.15

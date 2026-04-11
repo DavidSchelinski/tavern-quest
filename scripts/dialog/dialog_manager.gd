@@ -74,14 +74,19 @@ func show_node(node_id: String) -> void:
 	if not voice_key.is_empty():
 		VoiceOver.play(voice_key)
 
-	# Build choices array
+	# Build choices array (preserve action fields for select_choice)
 	var choices : Array = []
 	var raw_choices : Array = node.get("choices", [])
 	for c in raw_choices:
-		choices.append({
+		var entry := {
 			"text": tr(c.get("text", "")),
 			"next": c.get("next", ""),
-		})
+		}
+		if c.has("action"):
+			entry["action"] = c["action"]
+		if c.has("action_data"):
+			entry["action_data"] = c["action_data"]
+		choices.append(entry)
 
 	node_displayed.emit(speaker, text, choices)
 
@@ -132,7 +137,9 @@ func select_choice(index: int) -> void:
 	var choices : Array = node.get("choices", [])
 
 	if index >= 0 and index < choices.size():
-		var next : String = choices[index].get("next", "")
+		var choice : Dictionary = choices[index]
+		_handle_choice_action(choice)
+		var next : String = choice.get("next", "")
 		show_node(next)
 	else:
 		# No choices — advance to "next" or end
@@ -149,6 +156,31 @@ func advance() -> void:
 	if choices.is_empty():
 		var next : String = node.get("next", "")
 		show_node(next)
+
+
+## Handle custom actions attached to a dialog choice.
+func _handle_choice_action(choice: Dictionary) -> void:
+	var action : String = choice.get("action", "")
+	if action.is_empty():
+		return
+	var data : Dictionary = choice.get("action_data", {})
+	match action:
+		"apply_group":
+			var group_name : String = data.get("group", "")
+			var player_name : String = data.get("player", "")
+			if not group_name.is_empty() and not player_name.is_empty():
+				if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+					AdventureGroupManager.rpc_apply_to_group.rpc_id(1, group_name, player_name)
+				else:
+					AdventureGroupManager.apply_to_group(group_name, player_name)
+		"accept_application":
+			var group_name : String = data.get("group", "")
+			var player_name : String = data.get("player", "")
+			if not group_name.is_empty() and not player_name.is_empty():
+				if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+					AdventureGroupManager.rpc_accept_application.rpc_id(1, group_name, player_name)
+				else:
+					AdventureGroupManager.accept_application(group_name, player_name)
 
 
 ## End the current dialog.

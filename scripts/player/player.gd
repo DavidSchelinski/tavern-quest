@@ -66,8 +66,9 @@ var _air_time     : float           = 0.0
 
 # ── Combat ────────────────────────────────────────────────────────────────────
 var is_attacking  : bool = false
-var _combat       : CombatHandler = null
-var _sword_hitbox : Area3D = null
+var _combat         : CombatHandler = null
+var _sword_hitbox   : Area3D = null
+var _skill_executor : Node = null
 
 # Synced over the network so remote players show correct animations.
 var net_anim   : int = 0
@@ -92,6 +93,7 @@ func _ready() -> void:
 	_setup_dialog_ui.call_deferred()
 	_setup_in_game_menu.call_deferred()
 	_setup_combat.call_deferred()
+	_setup_skill_executor.call_deferred()
 	_setup_hud.call_deferred()
 
 
@@ -360,13 +362,25 @@ func _setup_combat() -> void:
 	hud.set_combat_handler(_combat)
 
 
+# ── Skill Executor ────────────────────────────────────────────────────────────
+
+func _setup_skill_executor() -> void:
+	if not _is_mine():
+		return
+	var script := load("res://scripts/player/skill_executor.gd")
+	_skill_executor = Node.new()
+	_skill_executor.set_script(script)
+	add_child(_skill_executor)
+	_skill_executor.setup(self)
+
+
 # ── Input ─────────────────────────────────────────────────────────────────────
 
 func _input(event: InputEvent) -> void:
 	if not _is_mine():
 		return
 	if state == State.BOARD_VIEW:
-		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact"):
+		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact") or event.is_action_pressed("pickup"):
 			get_viewport().set_input_as_handled()
 			exit_board_view()
 
@@ -389,15 +403,26 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("inventory"):
 		_open_inventory()
 		return
-	if event.is_action_pressed("interact") and _current_interactable:
-		if _current_interactable.is_in_group("pickable"):
-			if multiplayer.has_multiplayer_peer():
-				rpc_id(1, "_server_request_pickup", _current_interactable.get_path())
-			else:
-				_server_request_pickup(_current_interactable.get_path())
-		else:
-			_current_interactable.interact(self)
+	# F = interact with NPCs / questboard / etc. (camera raycast target)
+	if event.is_action_pressed("interact") and _current_interactable \
+		and not _current_interactable.is_in_group("pickable"):
+		_current_interactable.interact(self)
 		return
+	# E = pick up items
+	if event.is_action_pressed("pickup") and _current_interactable \
+		and _current_interactable.is_in_group("pickable"):
+		if multiplayer.has_multiplayer_peer():
+			rpc_id(1, "_server_request_pickup", _current_interactable.get_path())
+		else:
+			_server_request_pickup(_current_interactable.get_path())
+		return
+	# Hotbar skill activation (keys 1-7)
+	if event is InputEventKey and event.pressed and not event.is_echo() and _skill_executor != null:
+		var key := (event as InputEventKey).physical_keycode
+		if key >= KEY_1 and key <= KEY_7:
+			var slot_index := key - KEY_1
+			_skill_executor.try_activate_slot(slot_index)
+			return
 	# Forward attack inputs to the combat handler
 	if _combat != null and (event.is_action("attack")):
 		_combat.handle_input(event)
