@@ -287,7 +287,7 @@ func _handle_group_quest_completion(quest: Dictionary) -> void:
 		if quests.is_quest_active(id):
 			for i : int in quests._active_quests.size():
 				if quests._quest_id(quests._active_quests[i]) == id:
-					var q := quests._active_quests[i]
+					var q: Dictionary = quests._active_quests[i]
 					quests._active_quests.remove_at(i)
 					quests._completed_quests.append(q)
 					quests.quests_changed.emit()
