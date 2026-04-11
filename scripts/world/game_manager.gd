@@ -1,14 +1,10 @@
 extends Node
 
 # ── Config ────────────────────────────────────────────────────────────────────
-const PLAYER_SCENE        := "res://scenes/player/player.tscn"
-const SPAWN_POSITION      := Vector3(0.0, 1.0, 22.0)
-const SAFE_CHECK_RADIUS   := 0.45
-const SAFE_CHECK_HEIGHT   := 1.7
-const IDENTITY_PATH       := "user://identity.cfg"
-## Separate Identitätsdatei für Debug-Builds: kein PID-Suffix, bleibt über Neustarts stabil.
-## Für lokale 2-Spieler-Tests: zweite Datei manuell anlegen oder UUID darin ändern.
-const DEBUG_IDENTITY_PATH := "user://debug_identity.cfg"
+const PLAYER_SCENE      := "res://scenes/player/player.tscn"
+const SPAWN_POSITION    := Vector3(0.0, 1.0, 22.0)
+const SAFE_CHECK_RADIUS := 0.45
+const SAFE_CHECK_HEIGHT := 1.7
 
 # ── Refs ──────────────────────────────────────────────────────────────────────
 @onready var _players : Node3D = $Players
@@ -17,17 +13,14 @@ var _spawner : MultiplayerSpawner
 
 
 func _ready() -> void:
-	# Sicherstellt, dass der Welten-Ordner existiert.
-	# current_world_name wurde bereits vom Hauptmenü per SaveManager.set_world() gesetzt.
-	# Beim direkten Szenen-Start im Editor läuft das hier mit dem Default-Wert "default".
+	# Weltordner sicherstellen (current_world_name wurde vom Hauptmenü gesetzt).
 	SaveManager.set_world(SaveManager.current_world_name)
 
 	_setup_spawner()
 
 	if not multiplayer.has_multiplayer_peer():
 		# ── Single-player ──────────────────────────────────────────────────────
-		# Leere UUID → SaveManager speichert nach player_solo.json.
-		_spawn_player(1, "")
+		_spawn_player(1, PlayerProfile.current_player_name)
 		return
 
 	# ── Multiplayer ────────────────────────────────────────────────────────────
@@ -35,50 +28,12 @@ func _ready() -> void:
 	NetworkManager.server_disconnected.connect(_on_server_disconnected)
 
 	if multiplayer.is_server():
-		# Host spawnt sich selbst mit seiner persistenten UUID.
-		_spawn_player(1, _get_or_create_uuid())
+		_spawn_player(1, PlayerProfile.current_player_name)
 	else:
-		# Client teilt dem Server seine UUID mit und fordert den Spawn an.
-		rpc_id(1, &"_rpc_request_spawn", _get_or_create_uuid())
+		rpc_id(1, &"_rpc_request_spawn", PlayerProfile.current_player_name)
 
 
-# ── UUID-Identität ────────────────────────────────────────────────────────────
-
-## Liest die persistente Spieler-UUID.
-##
-## Debug/Editor: Liest aus debug_identity.cfg (kein PID-Suffix → bleibt über Neustarts
-## stabil, Saves gehen nicht verloren). Standard-UUID beim ersten Start: "debug_player_1".
-## Für lokale 2-Spieler-Tests: debug_identity.cfg manuell editieren oder eine zweite
-## Datei unter einem anderen Profilnamen anlegen.
-##
-## Release: Liest aus identity.cfg, generiert einmalig aus OS.get_unique_id().
-func _get_or_create_uuid() -> String:
-	# 1. Wenn wir im Godot-Editor/Debug testen, nutze IMMER die Prozess-ID des Fensters!
-	# Keine Dateien schreiben oder lesen, einfach die Fenster-ID nehmen.
-	if OS.has_feature("editor") or OS.has_feature("debug"):
-		var debug_uid = "Debug_Player_" + str(OS.get_process_id())
-		print("GameManager: Debug-UUID generiert – '%s'" % debug_uid)
-		return debug_uid
-
-	# 2. Release-Build (Echtes Spiel): persistente UUID aus identity.cfg
-	var cfg := ConfigFile.new()
-	# Ich gehe davon aus, dass IDENTITY_PATH oben in deinem Skript definiert ist
-	cfg.load(IDENTITY_PATH) 
-	var uid: String = cfg.get_value("player", "uuid", "") as String
-	
-	if uid.is_empty():
-		var base: String = OS.get_unique_id()
-		if base.is_empty():
-			base = str(randi())
-		uid = "%s_%d" % [base, Time.get_unix_time_from_system()]
-		cfg.set_value("player", "uuid", uid)
-		cfg.save(IDENTITY_PATH)
-		print("GameManager: Neue UUID generiert – '%s'" % uid)
-		
-	return uid
-
-
-# ── Spawner setup ─────────────────────────────────────────────────────────────
+# ── Spawner-Setup ─────────────────────────────────────────────────────────────
 
 func _setup_spawner() -> void:
 	_spawner = MultiplayerSpawner.new()
@@ -89,13 +44,13 @@ func _setup_spawner() -> void:
 	_spawner.spawned.connect(_on_player_spawned)
 
 
-# ── Spawn / despawn ───────────────────────────────────────────────────────────
+# ── Spawn / Despawn ───────────────────────────────────────────────────────────
 
-## Spawnt einen Spieler. Setzt alle Save-Daten VOR add_child, damit der
-## MultiplayerSpawner den Node erst repliziert, wenn er vollständig initialisiert ist.
-## Das verhindert den Gast-Reset-Bug (Client bekommt nie einen "leeren" Node).
-func _spawn_player(id: int, uuid: String) -> void:
-	if _players.has_node(str(id)):
+## Spawnt einen Spieler und lädt alle seine Daten VOR add_child.
+## Das verhindert den Gast-Reset-Bug: der MultiplayerSpawner repliziert
+## den Node erst, wenn Skills, Inventar und Position bereits korrekt sind.
+func _spawn_player(peer_id: int, player_name: String) -> void:
+	if _players.has_node(str(peer_id)):
 		return
 	var scene := load(PLAYER_SCENE) as PackedScene
 	if scene == null:
@@ -103,52 +58,100 @@ func _spawn_player(id: int, uuid: String) -> void:
 		return
 
 	var player: CharacterBody3D = scene.instantiate()
-	player.name = str(id)
-	# Authority muss vor add_child gesetzt werden, damit _ready() den richtigen Wert sieht.
-	player.set_multiplayer_authority(id)
+	player.name = str(peer_id)
+	player.set_multiplayer_authority(peer_id)
 
-	# ── Save-Daten VOR add_child anwenden ─────────────────────────────────────
-	# Reihenfolge ist kritisch: Erst alle Daten setzen, DANN zum SceneTree hinzufügen.
-	# So repliziert der MultiplayerSpawner den Node erst, wenn UUID, Position,
-	# Skills und Inventar bereits gesetzt sind – der Client bekommt nie einen Default-State.
-	var saved: Dictionary = SaveManager.get_player_data(uuid)
+	# ── Save-Daten vollständig laden ──────────────────────────────────────────
+	var saved: Dictionary = SaveManager.get_player_data(player_name)
+	_apply_all_save_data(player, player_name, saved)
 
-	var skills: Node = player.get_node_or_null("Skills")
-	if skills != null:
-		skills.player_uuid = uuid
-		skills.apply_save_data(saved)
-		player.position = skills.last_position
-	else:
-		player.position = SPAWN_POSITION
+	_log_spawn(peer_id, player_name, player, saved)
 
-	var inventory: Node = player.get_node_or_null("Inventory")
-	if inventory != null and saved.has("inventory") and saved["inventory"] is Array:
-		inventory.apply_save_data(saved["inventory"] as Array)
-
-	print("GameManager: Spieler %d ('%s') initialisiert – %d SP, %d Items, Pos %s." % [
-		id,
-		uuid if not uuid.is_empty() else "solo",
-		skills.skill_points if skills != null else 0,
-		_count_items(inventory),
-		player.position,
-	])
-
-	# ── Jetzt erst zum SceneTree → MultiplayerSpawner wird aktiv ──────────────
+	# ── Erst jetzt zum SceneTree → MultiplayerSpawner wird aktiv ──────────────
 	_players.add_child(player, true)
 
-	# Für echte Clients (nicht Host): Skill-Sync senden.
-	# call_deferred gibt dem Spawner einen Frame Zeit, den Node auf dem Client
-	# zu erstellen, bevor die RPC-Daten ankommen.
-	if multiplayer.has_multiplayer_peer() and id != 1 and skills != null:
-		_sync_skills_to_client.call_deferred(id, player)
+	# Client-Sync: Skills + Inventar nach Spawn-Replikation senden.
+	if multiplayer.has_multiplayer_peer() and peer_id != 1:
+		_sync_all_to_client.call_deferred(peer_id, player)
 
 	_ensure_safe_position.call_deferred(player)
 
 
-## Sendet Skills und Inventar an den Client, nachdem der Spawner den Node repliziert hat.
-## Reihenfolge: Daten setzen → force_ui_refresh bestätigt dem Client die vollständige
-## Initialisierung. Reliable RPCs kommen garantiert in Sendreihenfolge an.
-func _sync_skills_to_client(peer_id: int, player: Node) -> void:
+## Wendet alle gespeicherten Daten auf einen frisch instanziierten Player-Node an.
+func _apply_all_save_data(player: Node, player_name: String, saved: Dictionary) -> void:
+	# Skills + Hotbar + Position
+	var skills: Node = player.get_node_or_null("Skills")
+	if skills != null:
+		skills.set("player_uuid", player_name)
+		skills.call("apply_save_data", saved)
+		player.set("position", skills.get("last_position"))
+
+	# Inventar
+	var inventory: Node = player.get_node_or_null("Inventory")
+	if inventory != null and saved.has("inventory") and saved["inventory"] is Array:
+		inventory.call("apply_save_data", saved["inventory"] as Array)
+
+	# Stats
+	var stats: Node = player.get_node_or_null("Stats")
+	if stats != null and saved.has("stats_data") and saved["stats_data"] is Dictionary:
+		stats.call("apply_save_data", saved["stats_data"] as Dictionary)
+
+	# Quests
+	var quests: Node = player.get_node_or_null("Quests")
+	if quests != null and saved.has("quests_data") and saved["quests_data"] is Dictionary:
+		quests.call("apply_save_data", saved["quests_data"] as Dictionary)
+
+	# Gildenrang
+	var guild: Node = player.get_node_or_null("GuildRank")
+	if guild != null and saved.has("guild_data") and saved["guild_data"] is Dictionary:
+		guild.call("apply_save_data", saved["guild_data"] as Dictionary)
+
+	# HP + Stamina
+	var hp_saved: float = float(saved.get("hp", -1.0))
+	if stats != null:
+		var max_hp: int = int(stats.call("get_max_hp"))
+		var hp_val: float = float(max_hp) if hp_saved < 0 else minf(hp_saved, float(max_hp))
+		player.set("health", hp_val)
+	var stamina_saved: float = float(saved.get("stamina", 100.0))
+	player.set("_stamina", clampf(stamina_saved, 0.0, 100.0))
+
+
+## Sammelt alle zu speichernden Daten eines Spielers.
+func _collect_save_data(player: Node) -> Dictionary:
+	var data := {}
+
+	var skills: Node = player.get_node_or_null("Skills")
+	if skills != null:
+		skills.last_position = player.position
+		data.merge(skills.get_save_data())
+
+	var inventory: Node = player.get_node_or_null("Inventory")
+	if inventory != null:
+		data["inventory"] = inventory.get_save_data()
+
+	var stats: Node = player.get_node_or_null("Stats")
+	if stats != null:
+		data["stats_data"] = stats.get_save_data()
+
+	var quests: Node = player.get_node_or_null("Quests")
+	if quests != null:
+		data["quests_data"] = quests.get_save_data()
+
+	var guild: Node = player.get_node_or_null("GuildRank")
+	if guild != null:
+		data["guild_data"] = guild.get_save_data()
+
+	# HP + Stamina direkt aus dem Player-Node
+	if player.get("health") != null:
+		data["hp"] = float(player.health)
+	if player.get("_stamina") != null:
+		data["stamina"] = float(player._stamina)
+
+	return data
+
+
+## Sendet alle Daten (Skills + Inventar) nach der Spawn-Replikation an den Client.
+func _sync_all_to_client(peer_id: int, player: Node) -> void:
 	if not is_instance_valid(player):
 		return
 
@@ -174,19 +177,17 @@ func _ensure_safe_position(player: CharacterBody3D) -> void:
 	var params := PhysicsShapeQueryParameters3D.new()
 	params.shape          = shape
 	params.exclude        = [player.get_rid()]
-	params.collision_mask = 3   # world (1) + players (2)
+	params.collision_mask = 3
 
-	var origin: Vector3 = player.position
+	var origin := player.position
 	params.transform = Transform3D(Basis.IDENTITY, origin + Vector3(0.0, SAFE_CHECK_HEIGHT * 0.5, 0.0))
-
 	if space.intersect_shape(params, 1).is_empty():
 		return
 
-	# Spiralförmig nach außen suchen.
 	for radius: float in [1.5, 3.0, 4.5, 6.0, 9.0]:
 		for step: int in range(8):
-			var angle: float    = step * TAU / 8.0
-			var test_pos: Vector3 = origin + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+			var angle     := step * TAU / 8.0
+			var test_pos  := origin + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
 			params.transform = Transform3D(Basis.IDENTITY, test_pos + Vector3(0.0, SAFE_CHECK_HEIGHT * 0.5, 0.0))
 			if space.intersect_shape(params, 1).is_empty():
 				player.position = test_pos
@@ -195,47 +196,35 @@ func _ensure_safe_position(player: CharacterBody3D) -> void:
 	player.position = origin + Vector3(2.0, 0.0, 0.0)
 
 
-## Zählt belegte Inventar-Slots für Debug-Ausgaben.
-func _count_items(inventory: Node) -> int:
-	if inventory == null:
-		return 0
-	var count: int = 0
-	for slot: Variant in (inventory as Node).get("slots"):
-		if slot != null:
-			count += 1
-	return count
-
+# ── RPC ───────────────────────────────────────────────────────────────────────
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_request_spawn(uuid: String) -> void:
+func _rpc_request_spawn(player_name: String) -> void:
 	if not multiplayer.is_server():
 		return
-	_spawn_player(multiplayer.get_remote_sender_id(), uuid)
+	_spawn_player(multiplayer.get_remote_sender_id(), player_name)
 
 
 func _on_player_spawned(node: Node) -> void:
-	# Wird auf ALLEN Peers aufgerufen, nachdem der Spawner den Node repliziert hat.
 	node.set_multiplayer_authority(int(node.name))
 
 
-func _on_player_disconnected(id: int) -> void:
+# ── Disconnect / Reconnect ────────────────────────────────────────────────────
+
+func _on_player_disconnected(peer_id: int) -> void:
 	if not multiplayer.is_server():
 		return
-	var player := _players.get_node_or_null(str(id))
+	var player := _players.get_node_or_null(str(peer_id))
 	if player == null:
 		return
 
-	# Skills + Inventar vor dem Entfernen speichern.
 	var skills: Node = player.get_node_or_null("Skills")
-	if skills != null and not (skills.player_uuid as String).is_empty():
-		skills.last_position = player.position
-		var data: Dictionary = skills.get_save_data()
-		var inventory: Node  = player.get_node_or_null("Inventory")
-		if inventory != null:
-			data["inventory"] = inventory.get_save_data()
-		SaveManager.update_player_data(skills.player_uuid, data)
-		print("GameManager: Spieler %d ('%s') gespeichert – %d Items." \
-				% [id, skills.player_uuid, _count_items(inventory)])
+	var player_name: String = skills.player_uuid if skills != null else ""
+
+	if not player_name.is_empty():
+		var data := _collect_save_data(player)
+		SaveManager.update_player_data(player_name, data)
+		print("GameManager: '%s' (peer %d) gespeichert." % [player_name, peer_id])
 
 	player.queue_free()
 
@@ -243,3 +232,27 @@ func _on_player_disconnected(id: int) -> void:
 func _on_server_disconnected() -> void:
 	NetworkManager.close()
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
+
+# ── Debug-Hilfe ───────────────────────────────────────────────────────────────
+
+func _log_spawn(peer_id: int, player_name: String, player: Node, saved: Dictionary) -> void:
+	var skills: Node    = player.get_node_or_null("Skills")
+	var inventory: Node = player.get_node_or_null("Inventory")
+	var sp    : int     = int(skills.skill_points) if skills != null else 0
+	var items : int     = _count_items(inventory)
+	var pos   : Vector3 = player.position
+	print("GameManager: Spieler %d ('%s') gespawnt | %d SP | %d Items | Pos %s | Neu=%s" % [
+		peer_id, player_name, sp, items, pos,
+		str(not SaveManager.player_file_exists(player_name)),
+	])
+
+
+func _count_items(inventory: Node) -> int:
+	if inventory == null:
+		return 0
+	var count: int = 0
+	for slot: Variant in inventory.get("slots"):
+		if slot != null:
+			count += 1
+	return count

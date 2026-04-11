@@ -98,6 +98,29 @@ func mark_all_board_rewards_collected() -> void:
 		quests_changed.emit()
 
 
+# ── Save / Load ───────────────────────────────────────────────────────────────
+
+func get_save_data() -> Dictionary:
+	return {
+		"active":    _active_quests.duplicate(true),
+		"completed": _completed_quests.duplicate(true),
+	}
+
+
+func apply_save_data(data: Dictionary) -> void:
+	_active_quests.clear()
+	_completed_quests.clear()
+	if data.has("active") and data["active"] is Array:
+		for q: Variant in (data["active"] as Array):
+			if q is Dictionary:
+				_active_quests.append(q as Dictionary)
+	if data.has("completed") and data["completed"] is Array:
+		for q: Variant in (data["completed"] as Array):
+			if q is Dictionary:
+				_completed_quests.append(q as Dictionary)
+	quests_changed.emit()
+
+
 # ── Internal ──────────────────────────────────────────────────────────────────
 
 func _quest_id(quest: Dictionary) -> String:

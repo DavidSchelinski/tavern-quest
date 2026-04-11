@@ -127,9 +127,8 @@ func _server_request_pickup(item_path: NodePath) -> void:
 func _setup_game_menu() -> void:
 	if not _is_mine():
 		return
-	var menu_script := load("res://scripts/ui/game_menu.gd")
-	_game_menu = CanvasLayer.new()
-	_game_menu.set_script(menu_script)
+	var menu_scene := load("res://scenes/ui/game_menu.tscn") as PackedScene
+	_game_menu = menu_scene.instantiate()
 	add_child(_game_menu)
 	_game_menu.resumed.connect(_on_menu_resumed)
 
@@ -381,7 +380,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			deg_to_rad(PITCH_MIN),
 			deg_to_rad(PITCH_MAX)
 		)
-	if event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("open_menu"):
 		_open_game_menu()
 		return
 	if event.is_action_pressed("inventory"):

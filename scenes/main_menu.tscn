@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://mainmenu01"]
 
-[ext_resource type="Script" uid="uid://dqx2et04e6s6u" path="res://scripts/main_menu.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/ui/login_screen.tscn" id="2_login"]
 
-[node name="MainMenu" type="Control" unique_id=8440654]
+[node name="MainMenu" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -10,3 +11,484 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
+
+[node name="LoginScreen" parent="." instance=ExtResource("2_login")]
+visible = true
+
+[node name="MenuRoot" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="Background" type="ColorRect" parent="MenuRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.08, 0.06, 0.04, 1)
+
+[node name="FPSLabel" type="Label" parent="MenuRoot"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120
+offset_top = 8
+offset_right = -8
+visible = false
+
+[node name="Center" type="CenterContainer" parent="MenuRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Column" type="VBoxContainer" parent="MenuRoot/Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 0)
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+text = "Tavern Quest"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 56
+
+[node name="Subtitle" type="Label" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+text = "Wähle deinen Weg"
+horizontal_alignment = 1
+modulate = Color(0.6, 0.6, 0.6, 1)
+
+[node name="PlayerNameLabel" type="Label" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+modulate = Color(0.8, 0.75, 0.5, 1)
+theme_override_font_sizes/font_size = 16
+
+[node name="Spacer" type="Control" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+
+[node name="SoloButton" type="Button" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 54)
+text = "Solo spielen"
+theme_override_font_sizes/font_size = 18
+
+[node name="HostButton" type="Button" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 54)
+text = "Welt hosten"
+theme_override_font_sizes/font_size = 18
+
+[node name="JoinButton" type="Button" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 54)
+text = "Beitreten"
+theme_override_font_sizes/font_size = 18
+
+[node name="SettingsButton" type="Button" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 54)
+text = "Einstellungen"
+theme_override_font_sizes/font_size = 18
+
+[node name="ChangePlayerButton" type="Button" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 54)
+text = "Spieler wechseln"
+modulate = Color(0.8, 0.8, 0.8, 1)
+
+[node name="RunTestsButton" type="Button" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 44)
+text = "[Dev] Tests ausführen"
+modulate = Color(0.8, 0.8, 0.5, 1)
+
+[node name="QuitButton" type="Button" parent="MenuRoot/Center/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 54)
+text = "Beenden"
+theme_override_font_sizes/font_size = 18
+
+[node name="SettingsOverlay" type="Control" parent="MenuRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="Dim" type="ColorRect" parent="MenuRoot/SettingsOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="MenuRoot/SettingsOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="Panel" parent="MenuRoot/SettingsOverlay/Center"]
+custom_minimum_size = Vector2(680, 580)
+
+[node name="Margin" type="MarginContainer" parent="MenuRoot/SettingsOverlay/Center/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SettingsTitle" type="Label" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Einstellungen"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 26
+
+[node name="Tabs" type="TabContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Audio" type="VBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+
+[node name="Pad" type="MarginContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Audio"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 12
+
+[node name="Inner" type="VBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Audio/Pad"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="MasterRow" type="HBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Audio/Pad/Inner"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MasterLabel" type="Label" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Audio/Pad/Inner/MasterRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+text = "Lautstärke"
+
+[node name="MasterSlider" type="HSlider" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Audio/Pad/Inner/MasterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+value = 100.0
+
+[node name="MasterValue" type="Label" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Audio/Pad/Inner/MasterRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(36, 0)
+text = "100"
+horizontal_alignment = 2
+
+[node name="Display" type="VBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+
+[node name="Pad" type="MarginContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Display"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 12
+
+[node name="Inner" type="VBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Display/Pad"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="FPSRow" type="HBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner"]
+layout_mode = 2
+
+[node name="FPSLabel" type="Label" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner/FPSRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "FPS-Anzeige"
+
+[node name="FPSCheck" type="CheckButton" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner/FPSRow"]
+layout_mode = 2
+
+[node name="FullscreenRow" type="HBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner"]
+layout_mode = 2
+
+[node name="FullscreenLabel" type="Label" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner/FullscreenRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Vollbild"
+
+[node name="FullscreenCheck" type="CheckButton" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner/FullscreenRow"]
+layout_mode = 2
+
+[node name="Controls" type="ScrollContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+
+[node name="ControlsInner" type="VBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Controls"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Language" type="VBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+
+[node name="Pad" type="MarginContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Language"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 12
+
+[node name="Inner" type="VBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Language/Pad"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LangRow" type="HBoxContainer" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Language/Pad/Inner"]
+layout_mode = 2
+
+[node name="LangLabel" type="Label" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Language/Pad/Inner/LangRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sprache / Language"
+
+[node name="LangOptions" type="OptionButton" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Language/Pad/Inner/LangRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+
+[node name="LangHint" type="Label" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox/Tabs/Language/Pad/Inner"]
+layout_mode = 2
+text = "Neustart erforderlich für vollständige Übernahme."
+modulate = Color(0.6, 0.6, 0.6, 1)
+autowrap_mode = 3
+
+[node name="CloseSettingsButton" type="Button" parent="MenuRoot/SettingsOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Schließen"
+
+[node name="HostOverlay" type="Control" parent="MenuRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="Dim" type="ColorRect" parent="MenuRoot/HostOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="MenuRoot/HostOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="Panel" parent="MenuRoot/HostOverlay/Center"]
+custom_minimum_size = Vector2(520, 380)
+
+[node name="Margin" type="MarginContainer" parent="MenuRoot/HostOverlay/Center/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="MenuRoot/HostOverlay/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HostTitle" type="Label" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Welt hosten"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="LocalIPRow" type="HBoxContainer" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="LocalIPLabel" type="Label" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/LocalIPRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 0)
+text = "Lokale IP:"
+
+[node name="LocalIPValue" type="Label" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/LocalIPRow"]
+layout_mode = 2
+text = "–"
+
+[node name="PublicIPRow" type="HBoxContainer" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="PublicIPLabel" type="Label" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/PublicIPRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 0)
+text = "Öffentliche IP:"
+
+[node name="PublicIPValue" type="Label" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/PublicIPRow"]
+layout_mode = 2
+text = "–"
+
+[node name="PortRow" type="HBoxContainer" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="PortLabel" type="Label" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/PortRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 0)
+text = "Port:"
+
+[node name="PortInput" type="LineEdit" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/PortRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "7777"
+
+[node name="PortInfo" type="Label" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Andere Spieler können über diese IP und Port beitreten."
+modulate = Color(0.6, 0.6, 0.6, 1)
+autowrap_mode = 3
+
+[node name="Spacer" type="Control" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HostButtons" type="HBoxContainer" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HostCancelButton" type="Button" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/HostButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Abbrechen"
+
+[node name="HostStartButton" type="Button" parent="MenuRoot/HostOverlay/Center/Panel/Margin/VBox/HostButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Server starten"
+
+[node name="JoinOverlay" type="Control" parent="MenuRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="Dim" type="ColorRect" parent="MenuRoot/JoinOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="MenuRoot/JoinOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="Panel" parent="MenuRoot/JoinOverlay/Center"]
+custom_minimum_size = Vector2(540, 500)
+
+[node name="Margin" type="MarginContainer" parent="MenuRoot/JoinOverlay/Center/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="MenuRoot/JoinOverlay/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="JoinTitle" type="Label" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Server beitreten"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="LANLabel" type="Label" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "LAN-Server:"
+modulate = Color(0.75, 0.75, 0.75, 1)
+
+[node name="ServerList" type="ItemList" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 120)
+size_flags_vertical = 3
+
+[node name="ManualLabel" type="Label" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Manuell:"
+modulate = Color(0.75, 0.75, 0.75, 1)
+
+[node name="IPRow" type="HBoxContainer" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="IPLabel" type="Label" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox/IPRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+text = "IP-Adresse:"
+
+[node name="IPInput" type="LineEdit" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox/IPRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "127.0.0.1"
+
+[node name="JoinPortRow" type="HBoxContainer" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="JoinPortLabel" type="Label" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox/JoinPortRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+text = "Port:"
+
+[node name="JoinPortInput" type="LineEdit" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox/JoinPortRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "7777"
+
+[node name="JoinStatusLabel" type="Label" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = ""
+modulate = Color(1, 0.5, 0.5, 1)
+horizontal_alignment = 1
+
+[node name="JoinButtons" type="HBoxContainer" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="JoinCancelButton" type="Button" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox/JoinButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Abbrechen"
+
+[node name="JoinConnectButton" type="Button" parent="MenuRoot/JoinOverlay/Center/Panel/Margin/VBox/JoinButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Verbinden"
+
+[node name="WorldSelectionMenu" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false

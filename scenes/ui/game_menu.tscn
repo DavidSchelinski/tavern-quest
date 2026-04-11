@@ -1,0 +1,201 @@
+[gd_scene format=3 uid="uid://game_menu_01"]
+
+[ext_resource type="Script" path="res://scripts/ui/game_menu.gd" id="1_gm"]
+
+[node name="GameMenu" type="CanvasLayer"]
+script = ExtResource("1_gm")
+
+[node name="FPSRoot" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="FPSLabel" type="Label" parent="FPSRoot"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120
+offset_top = 8
+offset_right = -8
+visible = false
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Dim" type="ColorRect" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="Panel" parent="Root/Center"]
+custom_minimum_size = Vector2(680, 580)
+
+[node name="Margin" type="MarginContainer" parent="Root/Center/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="Root/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MenuTitle" type="Label" parent="Root/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Menü"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 26
+
+[node name="Tabs" type="TabContainer" parent="Root/Center/Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Audio" type="VBoxContainer" parent="Root/Center/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+
+[node name="Pad" type="MarginContainer" parent="Root/Center/Panel/Margin/VBox/Tabs/Audio"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 12
+
+[node name="Inner" type="VBoxContainer" parent="Root/Center/Panel/Margin/VBox/Tabs/Audio/Pad"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="MasterRow" type="HBoxContainer" parent="Root/Center/Panel/Margin/VBox/Tabs/Audio/Pad/Inner"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MasterLabel" type="Label" parent="Root/Center/Panel/Margin/VBox/Tabs/Audio/Pad/Inner/MasterRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+text = "Lautstärke"
+
+[node name="MasterSlider" type="HSlider" parent="Root/Center/Panel/Margin/VBox/Tabs/Audio/Pad/Inner/MasterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+value = 100.0
+
+[node name="MasterValue" type="Label" parent="Root/Center/Panel/Margin/VBox/Tabs/Audio/Pad/Inner/MasterRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(36, 0)
+text = "100"
+horizontal_alignment = 2
+
+[node name="Display" type="VBoxContainer" parent="Root/Center/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+
+[node name="Pad" type="MarginContainer" parent="Root/Center/Panel/Margin/VBox/Tabs/Display"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 12
+
+[node name="Inner" type="VBoxContainer" parent="Root/Center/Panel/Margin/VBox/Tabs/Display/Pad"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="FPSRow" type="HBoxContainer" parent="Root/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner"]
+layout_mode = 2
+
+[node name="FPSLabel2" type="Label" parent="Root/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner/FPSRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "FPS-Anzeige"
+
+[node name="FPSCheck" type="CheckButton" parent="Root/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner/FPSRow"]
+layout_mode = 2
+
+[node name="FullscreenRow" type="HBoxContainer" parent="Root/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner"]
+layout_mode = 2
+
+[node name="FullscreenLabel" type="Label" parent="Root/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner/FullscreenRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Vollbild"
+
+[node name="FullscreenCheck" type="CheckButton" parent="Root/Center/Panel/Margin/VBox/Tabs/Display/Pad/Inner/FullscreenRow"]
+layout_mode = 2
+
+[node name="Controls" type="ScrollContainer" parent="Root/Center/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+
+[node name="ControlsInner" type="VBoxContainer" parent="Root/Center/Panel/Margin/VBox/Tabs/Controls"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Dev" type="ScrollContainer" parent="Root/Center/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+
+[node name="DevInner" type="VBoxContainer" parent="Root/Center/Panel/Margin/VBox/Tabs/Dev"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="DevWarning" type="Label" parent="Root/Center/Panel/Margin/VBox/Tabs/Dev/DevInner"]
+layout_mode = 2
+text = "Nur für Testzwecke / For testing only"
+modulate = Color(0.95, 0.65, 0.2, 1)
+theme_override_font_sizes/font_size = 13
+
+[node name="DevSep" type="HSeparator" parent="Root/Center/Panel/Margin/VBox/Tabs/Dev/DevInner"]
+layout_mode = 2
+
+[node name="DevRankLabel" type="Label" parent="Root/Center/Panel/Margin/VBox/Tabs/Dev/DevInner"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
+
+[node name="DevSep2" type="HSeparator" parent="Root/Center/Panel/Margin/VBox/Tabs/Dev/DevInner"]
+layout_mode = 2
+
+[node name="DevQuestsLabel" type="Label" parent="Root/Center/Panel/Margin/VBox/Tabs/Dev/DevInner"]
+layout_mode = 2
+text = "Aktive Quests:"
+theme_override_font_sizes/font_size = 13
+
+[node name="DevQuestList" type="VBoxContainer" parent="Root/Center/Panel/Margin/VBox/Tabs/Dev/DevInner"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ButtonRow" type="HBoxContainer" parent="Root/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ResumeButton" type="Button" parent="Root/Center/Panel/Margin/VBox/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 44)
+text = "Weiterspielen"
+theme_override_font_sizes/font_size = 16
+
+[node name="MainMenuButton" type="Button" parent="Root/Center/Panel/Margin/VBox/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 44)
+text = "Hauptmenü"
+theme_override_font_sizes/font_size = 16

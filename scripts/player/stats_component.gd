@@ -50,6 +50,25 @@ func spend_point(stat: String) -> bool:
 	return true
 
 
+# ── Save / Load ───────────────────────────────────────────────────────────────
+
+func get_save_data() -> Dictionary:
+	return {
+		"stats":      stats.duplicate(),
+		"stat_points": stat_points,
+	}
+
+
+func apply_save_data(data: Dictionary) -> void:
+	if data.has("stats") and data["stats"] is Dictionary:
+		for key: String in (data["stats"] as Dictionary).keys():
+			if stats.has(key):
+				stats[key] = int((data["stats"] as Dictionary)[key])
+	if data.has("stat_points"):
+		stat_points = int(data["stat_points"])
+	stats_changed.emit()
+
+
 # ── Derived values (used by combat + movement) ────────────────────────────────
 
 ## Multiplier on outgoing attack damage (Strength). +10 % per point above 1.

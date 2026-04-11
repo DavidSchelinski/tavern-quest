@@ -1,0 +1,91 @@
+[gd_scene format=3 uid="uid://login_screen_01"]
+
+[ext_resource type="Script" path="res://scripts/ui/login_screen.gd" id="1_login"]
+
+[node name="LoginScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_login")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.08, 0.06, 0.04, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="Panel" parent="Center"]
+custom_minimum_size = Vector2(500, 520)
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_bottom = 28
+
+[node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Tavern Quest"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 48
+
+[node name="Subtitle" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Wer bist du, Abenteurer?"
+horizontal_alignment = 1
+modulate = Color(0.75, 0.75, 0.75, 1)
+
+[node name="Spacer1" type="Control" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 8)
+
+[node name="NameInput" type="LineEdit" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+placeholder_text = "Spielername (z.B. Host_Gamer)..."
+max_length = 32
+custom_minimum_size = Vector2(0, 44)
+
+[node name="ConfirmButton" type="Button" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 48)
+text = "Spielen"
+theme_override_font_sizes/font_size = 18
+
+[node name="ErrorLabel" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+modulate = Color(1, 0.4, 0.4, 1)
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Separator" type="HSeparator" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="ProfilesLabel" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Vorhandene Profile (klicken zum Auswählen):"
+modulate = Color(0.75, 0.75, 0.75, 1)
+theme_override_font_sizes/font_size = 13
+
+[node name="ProfileList" type="ItemList" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 140)
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 14

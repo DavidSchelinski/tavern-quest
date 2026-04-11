@@ -101,6 +101,24 @@ func promote() -> void:
 	points_changed.emit(_points, get_points_needed())
 
 
+# ── Save / Load ───────────────────────────────────────────────────────────────
+
+func get_save_data() -> Dictionary:
+	return {
+		"rank_index": _rank_index,
+		"points":     _points,
+	}
+
+
+func apply_save_data(data: Dictionary) -> void:
+	if data.has("rank_index"):
+		_rank_index = clamp(int(data["rank_index"]), 0, RANKS.size() - 1)
+	if data.has("points"):
+		_points = maxi(0, int(data["points"]))
+	rank_changed.emit(get_rank())
+	points_changed.emit(_points, get_points_needed())
+
+
 # ── Internal ──────────────────────────────────────────────────────────────────
 
 func _on_quest_completed(quest: Dictionary) -> void:

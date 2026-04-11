@@ -10,8 +10,11 @@ var slots : Array = []
 
 
 func _ready() -> void:
-	slots.resize(SLOT_COUNT)
-	slots.fill(null)
+	if slots.size() == 0: # Nur wenn das Array noch gar nicht existiert
+		slots.resize(SLOT_COUNT)
+		slots.fill(null)
+	# Wenn slots.size() bereits 30 ist (weil apply_save_data es gesetzt hat), 
+	# tun wir hier GAR NICHTS und behalten die Items.
 
 
 ## Try to add an item. Returns the number that could NOT be added (0 = all added).
@@ -118,3 +121,47 @@ func get_slot(index: int) -> Variant:
 	if index < 0 or index >= SLOT_COUNT:
 		return null
 	return slots[index]
+
+# ── Save & Load ───────────────────────────────────────────────────────────────
+
+func get_save_data() -> Array:
+	var saved_slots = []
+	for slot in slots:
+		if slot == null:
+			saved_slots.append(null)
+		else:
+			# Wir speichern nur die Text-Werte, nicht die Ressource selbst!
+			var item_dict = slot as Dictionary
+			saved_slots.append({
+				"item_id": item_dict["item"].id,
+				"count": item_dict["count"]
+			})
+	return saved_slots
+
+func apply_save_data(saved_data: Array) -> void:
+	for i in range(mini(slots.size(), saved_data.size())):
+		var data = saved_data[i]
+		if data == null:
+			slots[i] = null
+		else:
+			var item_id = data["item_id"]
+			var count = data["count"]
+			
+			# ACHTUNG: Passe diesen Pfad an den echten Ordner deiner Item-Ressourcen an!
+			# Beispiel: "res://items/resources/" + item_id + ".tres"
+			var item_path = "res://data/items/" + item_id + ".tres"
+			
+			if ResourceLoader.exists(item_path):
+				var item_resource = load(item_path) as ItemData
+				slots[i] = { "item": item_resource, "count": count }
+			else:
+				push_error("InventoryLoad: Item-Datei nicht gefunden: " + item_path)
+				slots[i] = null
+				
+		slot_changed.emit(i)
+	inventory_changed.emit()
+
+# Diese Funktion wird vom Server aufgerufen, um dem Gast beim Start sein Inventar zu geben
+@rpc("authority", "call_remote", "reliable")
+func sync_inventory(saved_data: Array) -> void:
+	apply_save_data(saved_data)
