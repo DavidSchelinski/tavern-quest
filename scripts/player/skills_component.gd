@@ -84,7 +84,7 @@ func request_buy_skill(skill_id: String) -> void:
 	# get_remote_sender_id() = 0 wenn lokal aufgerufen (Host), dann kein RPC nötig.
 	var sender_id: int = multiplayer.get_remote_sender_id()
 	if sender_id != 0:
-		sync_skill_data.rpc_id(sender_id, skill_points, _unlocked_skills.duplicate())
+		sync_skill_data.rpc_id(sender_id, skill_points, _unlocked_skills.duplicate(), _hotbar.duplicate())
 
 	# Persistieren (nur Server speichert)
 	if player_uuid != "":
@@ -96,10 +96,17 @@ func request_buy_skill(skill_id: String) -> void:
 ## nicht die des Servers – der Server muss aber senden können.
 ## call_local: Wenn der Server es lokal aufruft, ist es ein harmloser No-op (Daten sind gleich).
 @rpc("any_peer", "call_local", "reliable")
-func sync_skill_data(points: int, unlocked: Dictionary) -> void:
+func sync_skill_data(points: int, unlocked: Dictionary, hotbar: Array) -> void:
 	skill_points     = points
 	_unlocked_skills = unlocked
+	_hotbar          = hotbar
 	skill_data_synced.emit()
+
+
+## Server → Client: sync the player's display name so the client knows its own identity.
+@rpc("any_peer", "call_local", "reliable")
+func sync_player_uuid(p_uuid: String) -> void:
+	player_uuid = p_uuid
 
 
 ## Wird vom Server gesendet, NACHDEM sync_skill_data angekommen ist.
@@ -116,6 +123,18 @@ func get_skill_level(skill_id: String) -> int:
 
 
 func equip_skill(skill_id: String, hotbar_index: int) -> void:
+	if hotbar_index < 0 or hotbar_index > 6:
+		return
+	_hotbar[hotbar_index] = skill_id
+	# Gastspieler: Änderung sofort an Server melden damit sie beim Disconnect gespeichert wird.
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		_report_hotbar_slot.rpc_id(1, hotbar_index, skill_id)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _report_hotbar_slot(hotbar_index: int, skill_id: String) -> void:
+	if not multiplayer.is_server():
+		return
 	if hotbar_index < 0 or hotbar_index > 6:
 		return
 	_hotbar[hotbar_index] = skill_id

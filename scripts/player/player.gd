@@ -102,9 +102,10 @@ func _ready() -> void:
 	_setup_combat.call_deferred()
 	_setup_skill_executor.call_deferred()
 	_setup_hud.call_deferred()
+	_setup_group_reward_popup.call_deferred()
 
 
-# ── Multiplayer authority ─────────────────────────────────────────────────────
+# ── Multiplayer authority ──────────────────────────────────────────────
 
 func _is_mine() -> bool:
 	if not multiplayer.has_multiplayer_peer():
@@ -216,6 +217,52 @@ func _open_inventory() -> void:
 func _on_in_game_menu_closed() -> void:
 	state = State.NORMAL
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+
+# ── Group reward popup ───────────────────────────────────────────────────────
+
+func _setup_group_reward_popup() -> void:
+	if not _is_mine():
+		return
+	var quests_node : Node = get_node_or_null("Quests")
+	if quests_node != null:
+		quests_node.group_reward_received.connect(_on_group_reward_received)
+
+
+func _on_group_reward_received(quest: Dictionary, gold_share: int) -> void:
+	var quest_title := tr(quest.get("title_key", "") as String)
+	var text := "Gruppenquest abgeschlossen!\n%s" % quest_title
+	if gold_share > 0:
+		text += "\nDein Anteil: %d Gold" % gold_share
+
+	var canvas := CanvasLayer.new()
+	canvas.layer = 100
+	add_child(canvas)
+
+	var panel := Panel.new()
+	panel.size = Vector2(340.0, 120.0)
+	panel.position = Vector2(
+		(ProjectSettings.get_setting("display/window/size/viewport_width", 1152) - 340.0) / 2.0,
+		80.0,
+	)
+	panel.add_theme_stylebox_override("panel", UITheme.make_panel_style(UITheme.BG_DARK, UITheme.ACCENT_GOLD, 4))
+	canvas.add_child(panel)
+
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.position = Vector2(10.0, 10.0)
+	lbl.size = Vector2(320.0, 100.0)
+	lbl.add_theme_font_size_override("font_size", UITheme.NORMAL_SIZE)
+	lbl.add_theme_color_override("font_color", UITheme.TEXT_TITLE)
+	panel.add_child(lbl)
+
+	# Auto-dismiss after 4 seconds with fade
+	var tween := create_tween()
+	tween.tween_interval(3.0)
+	tween.tween_property(panel, "modulate:a", 0.0, 1.0)
+	tween.tween_callback(canvas.queue_free)
 
 
 # ── Animation setup ───────────────────────────────────────────────────────────
@@ -396,7 +443,7 @@ func _input(event: InputEvent) -> void:
 	if not _is_mine():
 		return
 	if state == State.BOARD_VIEW:
-		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact") or event.is_action_pressed("pickup"):
+		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact"):
 			get_viewport().set_input_as_handled()
 			exit_board_view()
 
@@ -419,18 +466,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("inventory"):
 		_open_inventory()
 		return
-	# F = interact with NPCs / questboard / etc. (camera raycast target)
-	if event.is_action_pressed("interact") and _current_interactable \
-		and not _current_interactable.is_in_group("pickable"):
-		_current_interactable.interact(self)
-		return
-	# E = pick up items
-	if event.is_action_pressed("pickup") and _current_interactable \
-		and _current_interactable.is_in_group("pickable"):
-		if multiplayer.has_multiplayer_peer():
-			rpc_id(1, "_server_request_pickup", _current_interactable.get_path())
+	# E = interact with everything (camera raycast target)
+	if event.is_action_pressed("interact") and _current_interactable:
+		if _current_interactable.is_in_group("pickable"):
+			if multiplayer.has_multiplayer_peer():
+				rpc_id(1, "_server_request_pickup", _current_interactable.get_path())
+			else:
+				_server_request_pickup(_current_interactable.get_path())
 		else:
-			_server_request_pickup(_current_interactable.get_path())
+			_current_interactable.interact(self)
 		return
 	# Hotbar skill activation (keys 1-7)
 	if event is InputEventKey and event.pressed and not event.is_echo() and _skill_executor != null:

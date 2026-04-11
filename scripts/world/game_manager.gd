@@ -183,7 +183,7 @@ func _sync_all_to_client(peer_id: int, player: Node) -> void:
 
 	var skills: Node = player.get_node_or_null("Skills")
 	if skills != null:
-		skills.sync_skill_data.rpc_id(peer_id, skills.skill_points, skills._unlocked_skills.duplicate())
+		skills.sync_skill_data.rpc_id(peer_id, skills.skill_points, skills._unlocked_skills.duplicate(), skills._hotbar.duplicate())
 		skills.force_ui_refresh.rpc_id(peer_id)
 
 	var inventory: Node = player.get_node_or_null("Inventory")

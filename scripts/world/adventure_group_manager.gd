@@ -188,6 +188,14 @@ func rpc_leave_group(player_name: String) -> void:
 
 
 @rpc("any_peer", "call_remote", "reliable")
+func rpc_reject_application(group_name: String, player_name: String) -> void:
+	if not multiplayer.is_server():
+		return
+	reject_application(group_name, player_name)
+	_broadcast_groups()
+
+
+@rpc("any_peer", "call_remote", "reliable")
 func rpc_set_shared_quest(group_name: String, quest_key: String) -> void:
 	if not multiplayer.is_server():
 		return
@@ -222,3 +230,15 @@ func _deserialize_groups(data: Dictionary) -> void:
 		_groups = (data["groups"] as Dictionary).duplicate(true)
 	if data.has("player_group"):
 		_player_group = (data["player_group"] as Dictionary).duplicate()
+
+
+# ── Persistence (saved as part of world state) ──────────────────────────────
+
+func get_save_data() -> Dictionary:
+	return _serialize_groups()
+
+
+func apply_save_data(data: Dictionary) -> void:
+	_deserialize_groups(data)
+	groups_changed.emit()
+	applications_changed.emit()

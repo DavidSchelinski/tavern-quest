@@ -181,6 +181,9 @@ func _handle_choice_action(choice: Dictionary) -> void:
 					AdventureGroupManager.rpc_accept_application.rpc_id(1, group_name, player_name)
 				else:
 					AdventureGroupManager.accept_application(group_name, player_name)
+		"open_group_create":
+			if _current_npc != null and _current_npc.has_method("show_group_create_popup"):
+				_current_npc.show_group_create_popup()
 
 
 ## End the current dialog.

@@ -2,11 +2,15 @@ extends Node
 
 signal slot_changed(index: int)
 signal inventory_changed
+signal gold_changed(amount: int)
 
 const SLOT_COUNT : int = 30   # 6 columns × 5 rows
 
 ## Each slot is either null (empty) or { "id": String, "count": int }.
 var slots : Array = []
+
+## Player's gold balance.
+var gold : int = 0
 
 ## Equipment: slot_name → null or { "id": String, "count": 1 }.
 var equipment : Dictionary = {
@@ -128,6 +132,25 @@ func get_slot(index: int) -> Variant:
 	return slots[index]
 
 
+# ── Gold ──────────────────────────────────────────────────────────────────
+
+func add_gold(amount: int) -> void:
+	gold += amount
+	gold_changed.emit(gold)
+
+
+func remove_gold(amount: int) -> bool:
+	if gold < amount:
+		return false
+	gold -= amount
+	gold_changed.emit(gold)
+	return true
+
+
+func get_gold() -> int:
+	return gold
+
+
 # ── Equipment ─────────────────────────────────────────────────────────────────
 
 func get_equipment_slot(slot_name: String) -> Variant:
@@ -236,3 +259,10 @@ func apply_save_data(data: Array) -> void:
 @rpc("any_peer", "call_local", "reliable")
 func sync_inventory(data: Array) -> void:
 	apply_save_data(data)
+
+
+## Server → Client: sync gold balance.
+@rpc("any_peer", "call_local", "reliable")
+func sync_gold(amount: int) -> void:
+	gold = amount
+	gold_changed.emit(gold)

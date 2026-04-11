@@ -200,6 +200,8 @@ func _default_player_data() -> Dictionary:
 		"last_position": {"x": 0.0, "y": 1.0, "z": 22.0},
 		# Inventar
 		"inventory":     [],
+		# Gold
+		"gold":          0,
 		# Equipment
 		"equipment": {
 			"helm": null, "torso": null, "pants": null,

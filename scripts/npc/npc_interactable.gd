@@ -27,7 +27,7 @@ func _ready() -> void:
 
 func _build_hint() -> void:
 	_hint = Label3D.new()
-	_hint.text             = "[F] " + tr("ACTION_INTERACT")
+	_hint.text             = "[E] " + tr("ACTION_INTERACT")
 	_hint.billboard        = BaseMaterial3D.BILLBOARD_ENABLED
 	_hint.font_size        = 24
 	_hint.pixel_size       = 0.007
@@ -67,7 +67,6 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 	_player_nearby = true
 	_player_ref    = body
-	_hint.visible  = not _in_dialog
 
 
 func _on_body_exited(body: Node3D) -> void:
@@ -78,12 +77,15 @@ func _on_body_exited(body: Node3D) -> void:
 	_hint.visible  = false
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not _player_nearby or _in_dialog:
-		return
-	if event.is_action_pressed("interact"):
-		get_viewport().set_input_as_handled()
-		interact(_player_ref)
+## Called by the player's camera raycast when looking at this NPC.
+func on_look_at() -> void:
+	if not _in_dialog:
+		_hint.visible = true
+
+
+## Called by the player's camera raycast when looking away.
+func on_look_away() -> void:
+	_hint.visible = false
 
 
 func interact(player: Node3D) -> void:

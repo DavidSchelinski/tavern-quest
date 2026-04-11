@@ -26,6 +26,7 @@ func get_save_data() -> Dictionary:
 		"npc_states":    npc_states.duplicate(true),
 		"time_of_day":   time_of_day,
 		"removed_items": removed_items.duplicate(),
+		"adventure_groups": AdventureGroupManager.get_save_data(),
 	}
 
 
@@ -37,6 +38,8 @@ func apply_save_data(data: Dictionary) -> void:
 		removed_items.clear()
 		for entry: Variant in data["removed_items"]:
 			removed_items.append(str(entry))
+	if data.has("adventure_groups") and data["adventure_groups"] is Dictionary:
+		AdventureGroupManager.apply_save_data(data["adventure_groups"] as Dictionary)
 	world_state_changed.emit()
 
 

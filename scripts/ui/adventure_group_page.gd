@@ -1,7 +1,8 @@
 extends Control
 
 ## Adventure Group page inside the InGameMenu.
-## Shows current group members, online status, shared quest, and group management.
+## Shows current group members, online/offline status, shared quest, and allows leaving.
+## Group creation and applications are handled at the Receptionist NPC.
 
 var _player_ref     : Node3D = null
 var _member_list    : VBoxContainer = null
@@ -10,8 +11,6 @@ var _no_group_hint  : Label = null
 var _group_title    : Label = null
 var _shared_quest   : Label = null
 var _leave_btn      : Button = null
-var _create_panel   : Control = null
-var _create_input   : LineEdit = null
 
 const LIST_W   : float = 260.0
 const PADDING  : float = 16.0
@@ -51,45 +50,13 @@ func _build_ui() -> void:
 
 	# ── No group hint (shown when player is not in a group) ──────────────────
 	_no_group_hint = Label.new()
-	_no_group_hint.text = "Du bist in keiner Abenteuergruppe.\nErstelle eine neue oder bewirb dich bei der Rezeptionistin."
+	_no_group_hint.text = "Du bist in keiner Abenteuergruppe.\nBesuche die Rezeptionistin um eine Gruppe zu erstellen\noder dich bei einer bestehenden Gruppe zu bewerben."
 	_no_group_hint.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_no_group_hint.position = Vector2(PADDING, content_y + 20.0)
-	_no_group_hint.size = Vector2(panel_w - PADDING * 2.0, 60.0)
+	_no_group_hint.size = Vector2(panel_w - PADDING * 2.0, 80.0)
 	_no_group_hint.add_theme_font_size_override("font_size", UITheme.NORMAL_SIZE)
 	_no_group_hint.add_theme_color_override("font_color", UITheme.TEXT_MUTED)
 	add_child(_no_group_hint)
-
-	# ── Create group panel (shown when not in a group) ───────────────────────
-	_create_panel = Control.new()
-	_create_panel.position = Vector2(PADDING, content_y + 90.0)
-	_create_panel.size = Vector2(400.0, 80.0)
-	add_child(_create_panel)
-
-	var create_label := Label.new()
-	create_label.text = "Neue Gruppe erstellen:"
-	create_label.position = Vector2(0, 0)
-	create_label.size = Vector2(200.0, 24.0)
-	create_label.add_theme_font_size_override("font_size", UITheme.NORMAL_SIZE)
-	create_label.add_theme_color_override("font_color", UITheme.TEXT_NORMAL)
-	_create_panel.add_child(create_label)
-
-	_create_input = LineEdit.new()
-	_create_input.position = Vector2(0, 28.0)
-	_create_input.size = Vector2(250.0, 32.0)
-	_create_input.placeholder_text = "Gruppenname..."
-	_create_input.max_length = 24
-	_create_input.add_theme_font_size_override("font_size", UITheme.NORMAL_SIZE)
-	_create_panel.add_child(_create_input)
-
-	var create_btn := Button.new()
-	create_btn.text = "Erstellen"
-	create_btn.position = Vector2(260.0, 28.0)
-	create_btn.size = Vector2(100.0, 32.0)
-	create_btn.add_theme_font_size_override("font_size", UITheme.NORMAL_SIZE)
-	create_btn.add_theme_stylebox_override("normal", UITheme.make_panel_style(UITheme.CONFIRM_COLOR.darkened(0.5), UITheme.CONFIRM_COLOR, 4))
-	create_btn.add_theme_color_override("font_color", UITheme.TEXT_NORMAL)
-	create_btn.pressed.connect(_on_create_pressed)
-	_create_panel.add_child(create_btn)
 
 	# ── Group info panel (shown when in a group) ─────────────────────────────
 	_info_panel = Control.new()
@@ -188,7 +155,6 @@ func _refresh_page() -> void:
 
 	var in_group := not group_name.is_empty()
 	_no_group_hint.visible = not in_group
-	_create_panel.visible = not in_group
 	_info_panel.visible = in_group
 
 	if not in_group:
@@ -297,19 +263,6 @@ func _add_application_entry(parent: VBoxContainer, group_name: String, app_name:
 
 # ── Actions ──────────────────────────────────────────────────────────────────
 
-func _on_create_pressed() -> void:
-	var group_name := _create_input.text.strip_edges()
-	if group_name.is_empty():
-		return
-	var player_name := _get_player_name()
-	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
-		AdventureGroupManager.rpc_create_group.rpc_id(1, group_name, player_name)
-	else:
-		AdventureGroupManager.create_group(group_name, player_name)
-	_create_input.text = ""
-	_refresh_page()
-
-
 func _on_leave_pressed() -> void:
 	var player_name := _get_player_name()
 	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
@@ -329,8 +282,7 @@ func _on_accept_application(group_name: String, app_name: String) -> void:
 
 func _on_reject_application(group_name: String, app_name: String) -> void:
 	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
-		# No RPC for reject yet, but the leader is likely the server host
-		AdventureGroupManager.reject_application(group_name, app_name)
+		AdventureGroupManager.rpc_reject_application.rpc_id(1, group_name, app_name)
 	else:
 		AdventureGroupManager.reject_application(group_name, app_name)
 	_refresh_page()

@@ -133,7 +133,7 @@ func _build_ui() -> void:
 
 	# Advance hint (for choiceless nodes)
 	_advance_hint = Label.new()
-	_advance_hint.text = "[F]"
+	_advance_hint.text = "[E]"
 	_advance_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_advance_hint.modulate = Color(0.6, 0.6, 0.6)
 	_advance_hint.visible = false
