@@ -7,15 +7,17 @@ const SLOT_SIZE  : float = 52.0
 const SLOT_GAP   : float = 6.0
 const MARGIN_BOT : float = 20.0
 
-const C_BG     := Color(0.04, 0.03, 0.02, 0.80)
-const C_FILLED := Color(0.18, 0.40, 0.75, 0.45)
-const C_BORDER := Color(0.35, 0.30, 0.22, 1.0)
-const C_KEY    := Color(0.60, 0.58, 0.52, 1.0)
-const C_SKILL  := Color(0.90, 0.86, 0.78, 1.0)
+const C_BG     := Color(0.10, 0.08, 0.07, 0.80)   # UITheme.BG_DARK (alpha adjusted)
+const C_FILLED := Color(0.20, 0.16, 0.12, 0.85)   # UITheme.BG_LIGHT
+const C_BORDER := Color(0.55, 0.45, 0.30, 1.0)     # UITheme.BORDER
+const C_KEY    := Color(0.55, 0.52, 0.47, 1.0)      # UITheme.TEXT_DIMMED
+const C_SKILL  := Color(0.88, 0.82, 0.72, 1.0)      # UITheme.TEXT_NORMAL
 
 var _player       : Node  = null
 var _slot_panels  : Array = []
 var _skill_labels : Array = []
+var _skill_icons  : Array = []
+var _skill_data_cache : Dictionary = {}
 
 
 func _ready() -> void:
@@ -71,7 +73,18 @@ func _build_ui() -> void:
 		key_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(key_lbl)
 
-		# Skill name (centred)
+		# Skill icon
+		var skill_icon := TextureRect.new()
+		skill_icon.position = Vector2(6.0, 12.0)
+		skill_icon.size = Vector2(SLOT_SIZE - 12.0, SLOT_SIZE - 24.0)
+		skill_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		skill_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		skill_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		skill_icon.visible = false
+		slot.add_child(skill_icon)
+		_skill_icons.append(skill_icon)
+
+		# Skill name (centred, shown when no icon)
 		var skill_lbl := Label.new()
 		skill_lbl.position             = Vector2(2.0, SLOT_SIZE * 0.5 - 10.0)
 		skill_lbl.size                 = Vector2(SLOT_SIZE - 4.0, 20.0)
@@ -94,8 +107,40 @@ func _process(_delta: float) -> void:
 	for i : int in SLOT_COUNT:
 		var id    : String       = hotbar[i] as String
 		var lbl   : Label        = _skill_labels[i] as Label
+		var icon  : TextureRect  = _skill_icons[i] as TextureRect
 		var panel : Panel        = _slot_panels[i] as Panel
 		var style : StyleBoxFlat = panel.get_theme_stylebox("panel") as StyleBoxFlat
-		lbl.text = id if id != "" else ""
+
+		if id != "":
+			var sd := _get_skill_data(id)
+			if sd != null:
+				lbl.text = sd.display_name if sd.display_name != "" else id
+				if sd.icon != null:
+					icon.texture = sd.icon
+					icon.visible = true
+					lbl.visible = false
+				else:
+					icon.visible = false
+					lbl.visible = true
+			else:
+				lbl.text = id
+				icon.visible = false
+				lbl.visible = true
+		else:
+			lbl.text = ""
+			icon.texture = null
+			icon.visible = false
+			lbl.visible = true
 		if style:
 			style.bg_color = C_FILLED if id != "" else C_BG
+
+
+func _get_skill_data(skill_id: String) -> SkillData:
+	if _skill_data_cache.has(skill_id):
+		return _skill_data_cache[skill_id]
+	var path := "res://scripts/skills/" + skill_id + ".tres"
+	if ResourceLoader.exists(path):
+		var res := load(path) as SkillData
+		_skill_data_cache[skill_id] = res
+		return res
+	return null

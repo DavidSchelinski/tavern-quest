@@ -40,9 +40,9 @@ const SWORD_SCALE    := Vector3(1.0,  1.0,  1.0)
 # ── State ─────────────────────────────────────────────────────────────────────
 var state                 : State     = State.NORMAL
 var _current_interactable : Node3D    = null
-var _game_menu            : CanvasLayer = null
+var _options_menu          : CanvasLayer = null
 var _dialog_ui            : CanvasLayer = null
-var _inventory_ui         : CanvasLayer = null
+var _in_game_menu         : CanvasLayer = null
 
 # ── Pickup focus ──────────────────────────────────────────────────────────────
 const PICKUP_RADIUS        : float = 3.0
@@ -70,23 +70,23 @@ var net_anim   : int = 0
 var net_combat : int = 0
 
 # ── Health & Stamina ──────────────────────────────────────────────────────────
-const MAX_STAMINA : float = 100.0
 var health   : float = 0.0          # initialised in _ready via $Stats
-var _stamina : float = MAX_STAMINA
+var _stamina : float = 100.0
 var _hud     : CanvasLayer = null
 
 
 func _ready() -> void:
 	add_to_group("player")
 	health = $Stats.get_max_hp()
+	_stamina = $Stats.get_max_stamina()
 	if not multiplayer.has_multiplayer_peer():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		camera.current = true
 	_setup_animations.call_deferred()
 	_setup_multiplayer.call_deferred()
-	_setup_game_menu.call_deferred()
+	_setup_options_menu.call_deferred()
 	_setup_dialog_ui.call_deferred()
-	_setup_inventory_ui.call_deferred()
+	_setup_in_game_menu.call_deferred()
 	_setup_combat.call_deferred()
 	_setup_hud.call_deferred()
 
@@ -122,25 +122,25 @@ func _server_request_pickup(item_path: NodePath) -> void:
 		item.rpc("network_despawn")
 
 
-# ── Game menu ─────────────────────────────────────────────────────────────────
+# ── Options menu ──────────────────────────────────────────────────────────────
 
-func _setup_game_menu() -> void:
+func _setup_options_menu() -> void:
 	if not _is_mine():
 		return
-	var menu_scene := load("res://scenes/ui/game_menu.tscn") as PackedScene
-	_game_menu = menu_scene.instantiate()
-	add_child(_game_menu)
-	_game_menu.resumed.connect(_on_menu_resumed)
+	var menu_scene := load("res://scenes/ui/options_menu.tscn") as PackedScene
+	_options_menu = menu_scene.instantiate()
+	add_child(_options_menu)
+	_options_menu.resumed.connect(_on_menu_resumed)
 
 
-func _open_game_menu() -> void:
-	if _game_menu == null:
+func _open_options_menu() -> void:
+	if _options_menu == null:
 		return
 	state = State.MENU
 	velocity.x = 0.0
 	velocity.z = 0.0
 	_enter_anim_state(AnimState.IDLE)
-	_game_menu.open()
+	_options_menu.open()
 
 
 func _on_menu_resumed() -> void:
@@ -170,29 +170,28 @@ func exit_dialog() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 
-# ── Inventory ─────────────────────────────────────────────────────────────────
+# ── In-Game Menu (Inventar, Quests, Charakter, Skills) ────────────────────────
 
-func _setup_inventory_ui() -> void:
+func _setup_in_game_menu() -> void:
 	if not _is_mine():
 		return
-	var ui_script := load("res://scripts/ui/inventory_ui.gd")
-	_inventory_ui = CanvasLayer.new()
-	_inventory_ui.set_script(ui_script)
-	add_child(_inventory_ui)
-	_inventory_ui.closed.connect(_on_inventory_closed)
+	var menu_scene := load("res://scenes/ui/in_game_menu.tscn") as PackedScene
+	_in_game_menu = menu_scene.instantiate()
+	add_child(_in_game_menu)
+	_in_game_menu.closed.connect(_on_in_game_menu_closed)
 
 
 func _open_inventory() -> void:
-	if _inventory_ui == null:
+	if _in_game_menu == null:
 		return
 	state = State.INVENTORY
 	velocity.x = 0.0
 	velocity.z = 0.0
 	_enter_anim_state(AnimState.IDLE)
-	_inventory_ui.open(self)
+	_in_game_menu.open(self)
 
 
-func _on_inventory_closed() -> void:
+func _on_in_game_menu_closed() -> void:
 	state = State.NORMAL
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
@@ -381,7 +380,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			deg_to_rad(PITCH_MAX)
 		)
 	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("open_menu"):
-		_open_game_menu()
+		_open_options_menu()
 		return
 	if event.is_action_pressed("inventory"):
 		_open_inventory()
@@ -441,7 +440,7 @@ func _physics_process(delta: float) -> void:
 		if _stamina == 0.0:
 			sprinting = false   # force walk when exhausted
 	else:
-		_stamina = minf(MAX_STAMINA, _stamina + 15.0 * delta)
+		_stamina = minf($Stats.get_max_stamina(), _stamina + 15.0 * delta)
 
 	var speed : float = (SPRINT_SPEED if sprinting else WALK_SPEED) \
 						* $Stats.get_speed_multiplier()

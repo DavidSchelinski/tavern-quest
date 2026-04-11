@@ -5,7 +5,7 @@ signal stats_changed
 # ── Stat definitions ──────────────────────────────────────────────────────────
 
 const STAT_NAMES : Array[String] = [
-	"strength", "agility", "defense", "endurance", "charisma"
+	"strength", "agility", "defense", "endurance", "charisma", "stamina"
 ]
 
 const STAT_LABELS : Dictionary = {
@@ -14,6 +14,7 @@ const STAT_LABELS : Dictionary = {
 	"defense":   "Verteidigung",
 	"endurance": "Ausdauer",
 	"charisma":  "Charisma",
+	"stamina":   "Stamina",
 }
 
 const STAT_DESC : Dictionary = {
@@ -22,6 +23,7 @@ const STAT_DESC : Dictionary = {
 	"defense":   "-5% Eingehender Schaden",
 	"endurance": "+20 Max-HP pro Punkt",
 	"charisma":  "Quests & Handel",
+	"stamina":   "+10 Max-Stamina pro Punkt",
 }
 
 # ── Runtime state ─────────────────────────────────────────────────────────────
@@ -34,6 +36,7 @@ var stats : Dictionary = {
 	"defense":   1,
 	"endurance": 1,
 	"charisma":  1,
+	"stamina":   1,
 }
 
 var stat_points : int = 5
@@ -90,3 +93,7 @@ func get_max_hp() -> int:
 ## Fraction of incoming damage absorbed (Defense). 5 % per point, capped at 75 %.
 func get_damage_reduction() -> float:
 	return minf(((stats["defense"] as int) - 1) * 0.05, 0.75)
+
+## Maximum stamina pool (Stamina). 100 base + 10 per point above 1.
+func get_max_stamina() -> float:
+	return 100.0 + ((stats.get("stamina", 1) as int) - 1) * 10.0

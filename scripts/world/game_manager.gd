@@ -5,18 +5,30 @@ const PLAYER_SCENE      := "res://scenes/player/player.tscn"
 const SPAWN_POSITION    := Vector3(0.0, 1.0, 22.0)
 const SAFE_CHECK_RADIUS := 0.45
 const SAFE_CHECK_HEIGHT := 1.7
+const AUTO_SAVE_INTERVAL := 60.0
 
 # ── Refs ──────────────────────────────────────────────────────────────────────
 @onready var _players : Node3D = $Players
 
 var _spawner : MultiplayerSpawner
 
+## Maps peer_id → { "name": String, "code": String } for connected players.
+var _peer_identities : Dictionary = {}
+
+var _auto_save_timer : Timer
+
 
 func _ready() -> void:
 	# Weltordner sicherstellen (current_world_name wurde vom Hauptmenü gesetzt).
 	SaveManager.set_world(SaveManager.current_world_name)
 
+	# Welt-Zustand laden
+	var ws := SaveManager.load_world_state()
+	if not ws.is_empty():
+		WorldState.apply_save_data(ws)
+
 	_setup_spawner()
+	_setup_auto_save()
 
 	if not multiplayer.has_multiplayer_peer():
 		# ── Single-player ──────────────────────────────────────────────────────
@@ -28,9 +40,11 @@ func _ready() -> void:
 	NetworkManager.server_disconnected.connect(_on_server_disconnected)
 
 	if multiplayer.is_server():
+		var code := PlayerProfile.get_verification_code()
+		_peer_identities[1] = { "name": PlayerProfile.current_player_name, "code": code }
 		_spawn_player(1, PlayerProfile.current_player_name)
 	else:
-		rpc_id(1, &"_rpc_request_spawn", PlayerProfile.current_player_name)
+		rpc_id(1, &"_rpc_request_spawn", PlayerProfile.current_player_name, PlayerProfile.get_verification_code())
 
 
 # ── Spawner-Setup ─────────────────────────────────────────────────────────────
@@ -91,6 +105,10 @@ func _apply_all_save_data(player: Node, player_name: String, saved: Dictionary) 
 	if inventory != null and saved.has("inventory") and saved["inventory"] is Array:
 		inventory.call("apply_save_data", saved["inventory"] as Array)
 
+	# Equipment
+	if inventory != null and saved.has("equipment") and saved["equipment"] is Dictionary:
+		inventory.call("apply_equipment_save_data", saved["equipment"] as Dictionary)
+
 	# Stats
 	var stats: Node = player.get_node_or_null("Stats")
 	if stats != null and saved.has("stats_data") and saved["stats_data"] is Dictionary:
@@ -112,8 +130,11 @@ func _apply_all_save_data(player: Node, player_name: String, saved: Dictionary) 
 		var max_hp: int = int(stats.call("get_max_hp"))
 		var hp_val: float = float(max_hp) if hp_saved < 0 else minf(hp_saved, float(max_hp))
 		player.set("health", hp_val)
-	var stamina_saved: float = float(saved.get("stamina", 100.0))
-	player.set("_stamina", clampf(stamina_saved, 0.0, 100.0))
+	var max_stamina: float = 100.0
+	if stats != null and stats.has_method("get_max_stamina"):
+		max_stamina = float(stats.call("get_max_stamina"))
+	var stamina_saved: float = float(saved.get("stamina", max_stamina))
+	player.set("_stamina", clampf(stamina_saved, 0.0, max_stamina))
 
 
 ## Sammelt alle zu speichernden Daten eines Spielers.
@@ -128,6 +149,7 @@ func _collect_save_data(player: Node) -> Dictionary:
 	var inventory: Node = player.get_node_or_null("Inventory")
 	if inventory != null:
 		data["inventory"] = inventory.get_save_data()
+		data["equipment"] = inventory.get_equipment_save_data()
 
 	var stats: Node = player.get_node_or_null("Stats")
 	if stats != null:
@@ -199,10 +221,21 @@ func _ensure_safe_position(player: CharacterBody3D) -> void:
 # ── RPC ───────────────────────────────────────────────────────────────────────
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_request_spawn(player_name: String) -> void:
+func _rpc_request_spawn(player_name: String, verification_code: String = "") -> void:
 	if not multiplayer.is_server():
 		return
-	_spawn_player(multiplayer.get_remote_sender_id(), player_name)
+	var peer_id := multiplayer.get_remote_sender_id()
+
+	# Check for name collision with a different verification code (impersonation)
+	for existing_peer: int in _peer_identities:
+		var identity: Dictionary = _peer_identities[existing_peer]
+		if identity["name"] == player_name and identity["code"] != verification_code:
+			push_warning("GameManager: Peer %d abgelehnt – Name '%s' bereits mit anderem Code vergeben." % [peer_id, player_name])
+			return
+
+	# Reconnect check: if this name was seen before, verify the code matches
+	_peer_identities[peer_id] = { "name": player_name, "code": verification_code }
+	_spawn_player(peer_id, player_name)
 
 
 func _on_player_spawned(node: Node) -> void:
@@ -227,6 +260,7 @@ func _on_player_disconnected(peer_id: int) -> void:
 		print("GameManager: '%s' (peer %d) gespeichert." % [player_name, peer_id])
 
 	player.queue_free()
+	_peer_identities.erase(peer_id)
 
 
 func _on_server_disconnected() -> void:
@@ -256,3 +290,31 @@ func _count_items(inventory: Node) -> int:
 		if slot != null:
 			count += 1
 	return count
+
+
+# ── Auto-Save ────────────────────────────────────────────────────────────────
+
+func _setup_auto_save() -> void:
+	_auto_save_timer = Timer.new()
+	_auto_save_timer.wait_time = AUTO_SAVE_INTERVAL
+	_auto_save_timer.autostart = true
+	_auto_save_timer.timeout.connect(_on_auto_save)
+	add_child(_auto_save_timer)
+
+
+func _on_auto_save() -> void:
+	if not multiplayer.has_multiplayer_peer() or multiplayer.is_server():
+		save_all()
+
+
+## Speichert alle Spieler und den Welt-Zustand.
+func save_all() -> void:
+	for child: Node in _players.get_children():
+		var skills: Node = child.get_node_or_null("Skills")
+		var player_name: String = skills.player_uuid if skills != null else ""
+		if not player_name.is_empty():
+			var data := _collect_save_data(child)
+			SaveManager.update_player_data(player_name, data)
+
+	SaveManager.save_world_state(WorldState.get_save_data())
+	print("GameManager: Auto-Save abgeschlossen.")

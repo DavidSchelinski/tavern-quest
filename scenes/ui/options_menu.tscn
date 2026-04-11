@@ -1,8 +1,8 @@
-[gd_scene format=3 uid="uid://game_menu_01"]
+[gd_scene format=3 uid="uid://options_menu_01"]
 
-[ext_resource type="Script" path="res://scripts/ui/game_menu.gd" id="1_gm"]
+[ext_resource type="Script" path="res://scripts/ui/options_menu.gd" id="1_gm"]
 
-[node name="GameMenu" type="CanvasLayer"]
+[node name="OptionsMenu" type="CanvasLayer"]
 script = ExtResource("1_gm")
 
 [node name="FPSRoot" type="Control" parent="."]

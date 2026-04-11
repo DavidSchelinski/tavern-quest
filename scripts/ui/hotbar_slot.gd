@@ -30,4 +30,11 @@ func _drop_data(_at_position: Vector2, data: Variant) -> void:
 	lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	lbl.size = self.size
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	lbl.text = data["id"]
+	# Show display name instead of raw ID
+	var skill_id: String = data["id"]
+	var skill_path := "res://scripts/skills/" + skill_id + ".tres"
+	if ResourceLoader.exists(skill_path):
+		var sd := load(skill_path) as SkillData
+		lbl.text = sd.display_name if sd != null and sd.display_name != "" else skill_id
+	else:
+		lbl.text = skill_id

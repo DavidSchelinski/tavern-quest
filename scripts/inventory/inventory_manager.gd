@@ -8,6 +8,12 @@ const SLOT_COUNT : int = 30   # 6 columns × 5 rows
 ## Each slot is either null (empty) or { "item": ItemData, "count": int }.
 var slots : Array = []
 
+## Equipment: slot_name → null or { "item": ItemData, "count": 1 }.
+var equipment : Dictionary = {
+	"helm": null, "torso": null, "pants": null,
+	"shoes": null, "left_hand": null, "right_hand": null, "neck": null,
+}
+
 
 func _ready() -> void:
 	if slots.size() == 0: # Nur wenn das Array noch gar nicht existiert
@@ -121,6 +127,68 @@ func get_slot(index: int) -> Variant:
 	if index < 0 or index >= SLOT_COUNT:
 		return null
 	return slots[index]
+
+# ── Equipment ─────────────────────────────────────────────────────────────────
+
+func get_equipment_slot(slot_name: String) -> Variant:
+	return equipment.get(slot_name)
+
+
+func equip_from_data(slot_name: String, item_id: String) -> void:
+	if not equipment.has(slot_name):
+		return
+	var item := load("res://data/items/" + item_id + ".tres") as ItemData
+	if item == null:
+		return
+	# If something is already equipped, move it to inventory
+	if equipment[slot_name] != null:
+		var old_item: ItemData = equipment[slot_name]["item"]
+		add_item(old_item, 1)
+	equipment[slot_name] = {"item": item, "count": 1}
+	inventory_changed.emit()
+
+
+func unequip_item(slot_name: String) -> bool:
+	if not equipment.has(slot_name) or equipment[slot_name] == null:
+		return false
+	var data: Dictionary = equipment[slot_name]
+	var leftover := add_item(data["item"], data["count"])
+	if leftover == 0:
+		equipment[slot_name] = null
+		inventory_changed.emit()
+		return true
+	return false
+
+
+func get_equipment_save_data() -> Dictionary:
+	var saved := {}
+	for slot_name in equipment:
+		if equipment[slot_name] == null:
+			saved[slot_name] = null
+		else:
+			saved[slot_name] = {
+				"item_id": equipment[slot_name]["item"].id,
+				"count": equipment[slot_name]["count"],
+			}
+	return saved
+
+
+func apply_equipment_save_data(data: Dictionary) -> void:
+	for slot_name in data:
+		if not equipment.has(slot_name):
+			continue
+		if data[slot_name] == null:
+			equipment[slot_name] = null
+		else:
+			var item_id: String = data[slot_name]["item_id"]
+			var item_path := "res://data/items/" + item_id + ".tres"
+			if ResourceLoader.exists(item_path):
+				var item_resource := load(item_path) as ItemData
+				equipment[slot_name] = {"item": item_resource, "count": data[slot_name].get("count", 1)}
+			else:
+				equipment[slot_name] = null
+	inventory_changed.emit()
+
 
 # ── Save & Load ───────────────────────────────────────────────────────────────
 

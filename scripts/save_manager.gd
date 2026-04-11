@@ -92,6 +92,50 @@ func list_players_in_world() -> Array[String]:
 	return result
 
 
+# ── Welt-Zustand ─────────────────────────────────────────────────────────────
+
+## Speichert den Welt-Zustand (Dropped Items, NPC-States, Tageszeit).
+func save_world_state(data: Dictionary) -> void:
+	_write_json(_world_path() + "world_state.json", data)
+
+
+## Lädt den Welt-Zustand. Gibt leeres Dict zurück wenn keine Datei existiert.
+func load_world_state() -> Dictionary:
+	return _read_json(_world_path() + "world_state.json", {})
+
+
+## Löscht eine komplette Welt (Ordner + alle Spieler-Saves).
+func delete_world(world_name: String) -> bool:
+	var path := SAVES_ROOT + world_name + "/"
+	if not DirAccess.dir_exists_absolute(path):
+		return false
+	var success := _delete_dir_recursive(path)
+	if success:
+		print("SaveManager: Welt '%s' gelöscht." % world_name)
+	return success
+
+
+func _delete_dir_recursive(path: String) -> bool:
+	var dir := DirAccess.open(path)
+	if dir == null:
+		return false
+	dir.list_dir_begin()
+	var entry := dir.get_next()
+	while entry != "":
+		if entry == "." or entry == "..":
+			entry = dir.get_next()
+			continue
+		var full := path + entry
+		if dir.current_is_dir():
+			_delete_dir_recursive(full + "/")
+		else:
+			DirAccess.remove_absolute(full)
+		entry = dir.get_next()
+	dir.list_dir_end()
+	DirAccess.remove_absolute(path)
+	return true
+
+
 # ── Interne Pfad-Helfer ───────────────────────────────────────────────────────
 
 func _world_path() -> String:
@@ -156,6 +200,11 @@ func _default_player_data() -> Dictionary:
 		"last_position": {"x": 0.0, "y": 1.0, "z": 22.0},
 		# Inventar
 		"inventory":     [],
+		# Equipment
+		"equipment": {
+			"helm": null, "torso": null, "pants": null,
+			"shoes": null, "left_hand": null, "right_hand": null, "neck": null,
+		},
 		# Stats
 		"stats_data": {
 			"stats": {
@@ -164,6 +213,7 @@ func _default_player_data() -> Dictionary:
 				"defense":   1,
 				"endurance": 1,
 				"charisma":  1,
+				"stamina":   1,
 			},
 			"stat_points": 5,
 		},

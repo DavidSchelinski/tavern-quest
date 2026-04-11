@@ -36,11 +36,25 @@ func run_all_tests() -> void:
 	print("╚══════════════════════════════════════════════════╝\n")
 
 	# Alle Tests importieren und ausführen
-	var suite := preload("res://scripts/tests/test_save_load.gd").new()
-	suite.name = "TestSaveLoad"
-	add_child(suite)
-	suite.run(self)
-	suite.queue_free()
+	var suites: Array[Dictionary] = [
+		{"script": "res://scripts/tests/test_save_load.gd", "name": "TestSaveLoad"},
+		{"script": "res://scripts/tests/test_inventory.gd", "name": "TestInventory"},
+		{"script": "res://scripts/tests/test_skills.gd",    "name": "TestSkills"},
+		{"script": "res://scripts/tests/test_stats.gd",     "name": "TestStats"},
+		{"script": "res://scripts/tests/test_profile.gd",   "name": "TestProfile"},
+		{"script": "res://scripts/tests/test_world_state.gd","name": "TestWorldState"},
+	]
+
+	for entry: Dictionary in suites:
+		var script_path: String = entry["script"]
+		if not ResourceLoader.exists(script_path):
+			print("  [SKIP] %s – Datei nicht gefunden" % entry["name"])
+			continue
+		var suite: Node = (load(script_path) as GDScript).new()
+		suite.name = entry["name"]
+		add_child(suite)
+		suite.run(self)
+		suite.queue_free()
 
 	_print_summary()
 	_running = false

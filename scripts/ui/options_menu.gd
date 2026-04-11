@@ -1,8 +1,8 @@
 extends CanvasLayer
 
-## In-Game-Pausemenü.
+## Options / Pause menu.
 ## Öffnet sich über ESC oder M-Taste (open_menu-Aktion).
-## Alle Nodes sind in scenes/ui/game_menu.tscn definiert – im Editor bearbeitbar.
+## Alle Nodes sind in scenes/ui/options_menu.tscn definiert – im Editor bearbeitbar.
 
 signal resumed
 signal quit_to_menu
@@ -285,6 +285,7 @@ func _on_quit_to_menu() -> void:
 			data.merge(skills.get_save_data())
 		if inventory != null:
 			data["inventory"] = inventory.get_save_data()
+			data["equipment"] = inventory.get_equipment_save_data()
 		if stats != null:
 			data["stats_data"] = stats.get_save_data()
 		if quests != null:
@@ -297,7 +298,8 @@ func _on_quit_to_menu() -> void:
 			data["stamina"] = float(player._stamina)
 
 		SaveManager.update_player_data(PlayerProfile.current_player_name, data)
-		print("GameMenu: Spielerdaten gespeichert für '%s'" % PlayerProfile.current_player_name)
+		SaveManager.save_world_state(WorldState.get_save_data())
+		print("OptionsMenu: Spielerdaten + Welt gespeichert für '%s'" % PlayerProfile.current_player_name)
 
 	NetworkManager.close()
 	quit_to_menu.emit()

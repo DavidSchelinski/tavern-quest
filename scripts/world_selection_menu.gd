@@ -10,7 +10,9 @@ signal world_confirmed(world_name: String)
 var _world_list   : ItemList
 var _new_name_fld : LineEdit
 var _load_btn     : Button
+var _delete_btn   : Button
 var _error_label  : Label
+var _delete_confirm_panel : Panel = null
 
 
 func _ready() -> void:
@@ -25,6 +27,7 @@ func show_menu() -> void:
 	_new_name_fld.text  = ""
 	_error_label.text   = ""
 	_load_btn.disabled  = true
+	_delete_btn.disabled = true
 	visible             = true
 
 
@@ -76,11 +79,23 @@ func _build_ui() -> void:
 	_world_list.item_selected.connect(_on_world_selected)
 	col.add_child(_world_list)
 
+	var btn_row := HBoxContainer.new()
+	btn_row.add_theme_constant_override("separation", 8)
+	col.add_child(btn_row)
+
 	_load_btn          = Button.new()
 	_load_btn.text     = "Ausgewählte Welt laden"
 	_load_btn.disabled = true
+	_load_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_load_btn.pressed.connect(_on_load_pressed)
-	col.add_child(_load_btn)
+	btn_row.add_child(_load_btn)
+
+	_delete_btn          = Button.new()
+	_delete_btn.text     = "Löschen"
+	_delete_btn.disabled = true
+	_delete_btn.custom_minimum_size = Vector2(100, 0)
+	_delete_btn.pressed.connect(_on_delete_pressed)
+	btn_row.add_child(_delete_btn)
 
 	# ── Trennlinie ────────────────────────────────────────────────────────────
 	col.add_child(HSeparator.new())
@@ -149,6 +164,7 @@ func _fmt_date(unix: float) -> String:
 
 func _on_world_selected(_idx: int) -> void:
 	_load_btn.disabled = false
+	_delete_btn.disabled = false
 	_error_label.text  = ""
 
 
@@ -172,6 +188,67 @@ func _on_create_pressed() -> void:
 	_error_label.text = ""
 	visible = false
 	world_confirmed.emit(clean)
+
+
+func _on_delete_pressed() -> void:
+	var selected := _world_list.get_selected_items()
+	if selected.is_empty():
+		return
+	var world_name: String = _world_list.get_item_metadata(selected[0]) as String
+	if world_name.is_empty():
+		return
+
+	_close_delete_confirm()
+	_delete_confirm_panel = Panel.new()
+	_delete_confirm_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	var style := UITheme.make_panel_style(UITheme.BG_DARK, UITheme.CANCEL_COLOR)
+	_delete_confirm_panel.add_theme_stylebox_override("panel", style)
+	add_child(_delete_confirm_panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.position = Vector2(16, 12)
+	vbox.add_theme_constant_override("separation", 8)
+	_delete_confirm_panel.add_child(vbox)
+
+	var msg := Label.new()
+	msg.text = "Welt '%s' wirklich löschen?\nAlle Spieler-Saves gehen verloren!" % world_name
+	msg.add_theme_font_size_override("font_size", 14)
+	msg.autowrap_mode = TextServer.AUTOWRAP_WORD
+	vbox.add_child(msg)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	vbox.add_child(row)
+
+	var yes_btn := Button.new()
+	yes_btn.text = "Ja, löschen"
+	yes_btn.custom_minimum_size = Vector2(120, 36)
+	yes_btn.pressed.connect(func() -> void:
+		SaveManager.delete_world(world_name)
+		_close_delete_confirm()
+		_refresh_list()
+		_load_btn.disabled = true
+		_delete_btn.disabled = true
+	)
+	row.add_child(yes_btn)
+
+	var no_btn := Button.new()
+	no_btn.text = "Abbrechen"
+	no_btn.custom_minimum_size = Vector2(120, 36)
+	no_btn.pressed.connect(_close_delete_confirm)
+	row.add_child(no_btn)
+
+	_delete_confirm_panel.size = Vector2(360, 120)
+	var vp := get_viewport().get_visible_rect().size
+	_delete_confirm_panel.position = Vector2(
+		(vp.x - 360) / 2.0, (vp.y - 120) / 2.0
+	)
+
+
+func _close_delete_confirm() -> void:
+	if _delete_confirm_panel != null:
+		_delete_confirm_panel.queue_free()
+		_delete_confirm_panel = null
 
 
 ## Bereinigt den Weltnamen: nur Buchstaben, Zahlen, Unterstrich und Bindestrich.

@@ -8,10 +8,17 @@ const SLOT_COUNT : int = 30   # 6 columns × 5 rows
 ## Each slot is either null (empty) or { "id": String, "count": int }.
 var slots : Array = []
 
+## Equipment: slot_name → null or { "id": String, "count": 1 }.
+var equipment : Dictionary = {
+	"helm": null, "torso": null, "pants": null,
+	"shoes": null, "left_hand": null, "right_hand": null, "neck": null,
+}
+
 
 func _ready() -> void:
-	slots.resize(SLOT_COUNT)
-	slots.fill(null)
+	if slots.size() == 0:
+		slots.resize(SLOT_COUNT)
+		slots.fill(null)
 
 
 ## Try to add an item. Returns the number that could NOT be added (0 = all added).
@@ -119,6 +126,74 @@ func get_slot(index: int) -> Variant:
 	if index < 0 or index >= SLOT_COUNT:
 		return null
 	return slots[index]
+
+
+# ── Equipment ─────────────────────────────────────────────────────────────────
+
+func get_equipment_slot(slot_name: String) -> Variant:
+	return equipment.get(slot_name)
+
+
+func equip_item(slot_name: String, inv_index: int) -> void:
+	if not equipment.has(slot_name):
+		return
+	if inv_index < 0 or inv_index >= SLOT_COUNT or slots[inv_index] == null:
+		return
+	# Unequip current if occupied
+	if equipment[slot_name] != null:
+		var old: Dictionary = equipment[slot_name]
+		# Find empty slot for old equipment
+		for i: int in SLOT_COUNT:
+			if slots[i] == null:
+				slots[i] = old
+				slot_changed.emit(i)
+				break
+	equipment[slot_name] = slots[inv_index]
+	slots[inv_index] = null
+	slot_changed.emit(inv_index)
+	inventory_changed.emit()
+
+
+func unequip_item(slot_name: String) -> bool:
+	if not equipment.has(slot_name) or equipment[slot_name] == null:
+		return false
+	# Find empty inventory slot
+	for i: int in SLOT_COUNT:
+		if slots[i] == null:
+			slots[i] = equipment[slot_name]
+			equipment[slot_name] = null
+			slot_changed.emit(i)
+			inventory_changed.emit()
+			return true
+	return false  # No space
+
+
+func get_equipment_save_data() -> Dictionary:
+	var saved := {}
+	for slot_name: String in equipment:
+		if equipment[slot_name] == null:
+			saved[slot_name] = null
+		else:
+			saved[slot_name] = {
+				"id": (equipment[slot_name] as Dictionary)["id"],
+				"count": (equipment[slot_name] as Dictionary)["count"],
+			}
+	return saved
+
+
+func apply_equipment_save_data(data: Dictionary) -> void:
+	for slot_name: String in data:
+		if not equipment.has(slot_name):
+			continue
+		if data[slot_name] == null:
+			equipment[slot_name] = null
+		else:
+			var entry: Dictionary = data[slot_name] as Dictionary
+			equipment[slot_name] = {
+				"id": entry["id"] as String,
+				"count": int(entry.get("count", 1)),
+			}
+	inventory_changed.emit()
 
 
 # ── Save / Load ───────────────────────────────────────────────────────────────

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://in_game_menu_01"]
+
+[ext_resource type="Script" path="res://scripts/ui/in_game_menu.gd" id="1_igm"]
+
+[node name="InGameMenu" type="CanvasLayer"]
+script = ExtResource("1_igm")

@@ -56,9 +56,12 @@ func refresh_ui() -> void:
 		var sd: SkillData = skill_data_refs[i]
 		if btn == null or sd == null:
 			continue
-		var is_unlocked: bool = skills.get_skill_level(sd.id) > 0
+		var level: int = skills.get_skill_level(sd.id)
+		var is_unlocked: bool = level > 0
 		if btn.has_method("update_visual_state"):
-			btn.update_visual_state(is_unlocked)
+			btn.update_visual_state(is_unlocked, level)
+		if btn.has_method("_rebuild_tooltip"):
+			btn._rebuild_tooltip()
 
 	_draw_lines()
 

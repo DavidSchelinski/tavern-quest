@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://skill_page_01"]
+
+[ext_resource type="Script" path="res://scripts/ui/skill_page.gd" id="1_sp"]
+
+[node name="SkillPage" type="Control"]
+script = ExtResource("1_sp")

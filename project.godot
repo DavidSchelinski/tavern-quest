@@ -24,6 +24,7 @@ TestRunner="*res://scripts/tests/test_runner.gd"
 LocaleManager="*res://scripts/locale_manager.gd"
 VoiceOver="*res://scripts/voice_over.gd"
 DialogManager="*res://scripts/dialog/dialog_manager.gd"
+WorldState="*res://scripts/world/world_state.gd"
 
 [display]
 
