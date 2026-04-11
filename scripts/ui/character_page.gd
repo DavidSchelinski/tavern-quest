@@ -236,7 +236,7 @@ func _on_spend_point_preview(stat: String) -> void:
 	if _player_ref == null:
 		return
 	var stats_node: Node = _player_ref.get_node("Stats")
-	var available := stats_node.stat_points - _total_pending()
+	var available: int = stats_node.stat_points - _total_pending()
 	if available <= 0:
 		return
 	_pending_allocations[stat] = _pending_allocations.get(stat, 0) + 1
@@ -248,9 +248,14 @@ func _on_confirm() -> void:
 	if _player_ref == null:
 		return
 	var stats_node: Node = _player_ref.get_node("Stats")
-	for stat in _pending_allocations:
-		for i in _pending_allocations[stat]:
-			stats_node.spend_point(stat)
+	if multiplayer.has_multiplayer_peer():
+		# Multiplayer: Server validiert und sendet autoritative Daten zurück.
+		stats_node.request_spend_points.rpc_id(1, _pending_allocations.duplicate())
+	else:
+		# Singleplayer: direkt anwenden.
+		for stat: String in _pending_allocations:
+			for i: int in (_pending_allocations[stat] as int):
+				stats_node.spend_point(stat)
 	_pending_allocations.clear()
 	_preview_mode = false
 	_refresh_character_page()
@@ -273,7 +278,7 @@ func _refresh_preview() -> void:
 	if _player_ref == null:
 		return
 	var stats_node: Node = _player_ref.get_node("Stats")
-	var pts := stats_node.stat_points
+	var pts: int= stats_node.stat_points
 	var pending_total := _total_pending()
 	var remaining := pts - pending_total
 

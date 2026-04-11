@@ -44,6 +44,10 @@ var _options_menu          : CanvasLayer = null
 var _dialog_ui            : CanvasLayer = null
 var _in_game_menu         : CanvasLayer = null
 
+# ── Position sync (Multiplayer) ───────────────────────────────────────────────
+const POSITION_SYNC_INTERVAL : float = 3.0
+var _position_sync_timer     : float = 0.0
+
 # ── Pickup focus ──────────────────────────────────────────────────────────────
 const PICKUP_RADIUS        : float = 3.0
 const FOCUS_SWITCH_DELAY   : float = 0.25   # seconds before focus can switch to a new item
@@ -516,6 +520,15 @@ func _apply_remote_animations() -> void:
 # ── Interaction ray ───────────────────────────────────────────────────────────
 
 func _process(delta: float) -> void:
+	# Periodische Position-Meldung an Server (nur Gäste, nicht Host)
+	if _is_mine() and multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		_position_sync_timer -= delta
+		if _position_sync_timer <= 0.0:
+			_position_sync_timer = POSITION_SYNC_INTERVAL
+			var skills_node: Node = get_node_or_null("Skills")
+			if skills_node != null:
+				skills_node.report_position.rpc_id(1, position)
+
 	if not _is_mine() or state != State.NORMAL:
 		return
 	_focus_cooldown       = maxf(_focus_cooldown - delta, 0.0)

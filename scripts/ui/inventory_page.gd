@@ -219,7 +219,7 @@ func _refresh_slot(index: int) -> void:
 		icon.texture = null
 		lbl.text = ""
 	else:
-		var item : ItemData = _load_item(data["id"] if data.has("id") else data["item"].id)
+		var item : ItemData = _load_item(data["id"])
 		icon.texture = _get_icon(item)
 		lbl.text = str(data["count"]) if data["count"] > 1 else ""
 
@@ -270,21 +270,21 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 	if _held_data == null:
 		var data = inv.take_slot(index)
 		if data != null:
-			_held_data = {"id": data["item"].id, "count": data["count"]}
-			_held_icon.texture = _get_icon(data["item"])
+			_held_data = {"id": data["id"], "count": data["count"]}
+			_held_icon.texture = _get_icon(_load_item(data["id"]))
 			_held_icon.visible = true
 			_held_label.text = str(data["count"]) if data["count"] > 1 else ""
 			_held_label.visible = data["count"] > 1
 			_update_held_position(event.global_position)
 			item_held.emit(_held_data)
 	else:
-		var put_data = {"item": _load_item(_held_data["id"]), "count": _held_data["count"]}
+		var put_data : Dictionary = {"id": _held_data["id"], "count": _held_data["count"]}
 		var returned = inv.put_slot(index, put_data)
 		if returned == null:
 			_clear_held()
 		else:
-			_held_data = {"id": returned["item"].id, "count": returned["count"]}
-			_held_icon.texture = _get_icon(returned["item"])
+			_held_data = {"id": returned["id"], "count": returned["count"]}
+			_held_icon.texture = _get_icon(_load_item(returned["id"]))
 			_held_label.text = str(returned["count"]) if returned["count"] > 1 else ""
 			_held_label.visible = returned["count"] > 1
 
@@ -373,7 +373,7 @@ func _open_context_menu(slot_index: int, pos: Vector2) -> void:
 	_close_context_menu()
 	_ctx_slot = slot_index
 
-	var item : ItemData = data["item"]
+	var item : ItemData = _load_item(data["id"])
 	var count : int = data["count"]
 
 	_ctx_menu = Panel.new()
@@ -406,7 +406,7 @@ func _open_context_menu(slot_index: int, pos: Vector2) -> void:
 	drop_btn.pressed.connect(func() -> void:
 		var taken = inv.take_slot(slot_index)
 		if taken != null:
-			drop_to_world.emit(taken["item"].id, taken["count"])
+			drop_to_world.emit(taken["id"], taken["count"])
 		_close_context_menu()
 	)
 	col.add_child(drop_btn)
@@ -510,7 +510,7 @@ func _do_split(slot_index: int, take_count: int) -> void:
 	if data == null:
 		_close_split_dialog()
 		return
-	var item : ItemData = data["item"]
+	var item : ItemData = _load_item(data["id"])
 	var total : int = data["count"]
 	var split_amount : int = clampi(take_count, 1, total - 1)
 

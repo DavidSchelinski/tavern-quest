@@ -1,6 +1,7 @@
 extends Node
 
 signal stats_changed
+signal stats_initialized
 
 # ── Stat definitions ──────────────────────────────────────────────────────────
 
@@ -51,6 +52,53 @@ func spend_point(stat: String) -> bool:
 	stat_points -= 1
 	stats_changed.emit()
 	return true
+
+
+## Client sendet diese RPC-Anfrage an den Server (rpc_id(1, ...)).
+## allocations: Dictionary { stat_name → anzahl_punkte }
+## Der Server validiert, wendet an und sendet sync_stats_data zurück.
+@rpc("any_peer", "call_local", "reliable")
+func request_spend_points(allocations: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+
+	# Gesamtzahl prüfen
+	var total := 0
+	for stat: String in allocations:
+		if not stats.has(stat):
+			push_warning("StatsComponent: Ungültiger Stat '%s'" % stat)
+			return
+		var amount: int = int(allocations[stat])
+		if amount < 0:
+			push_warning("StatsComponent: Negativer Betrag für '%s'" % stat)
+			return
+		total += amount
+
+	if total > stat_points:
+		push_warning("StatsComponent: Nicht genug Statpunkte (%d verfügbar, %d angefragt)" % [stat_points, total])
+		return
+
+	# Anwenden
+	for stat: String in allocations:
+		stats[stat] = (stats[stat] as int) + int(allocations[stat])
+	stat_points -= total
+	stats_changed.emit()
+
+	# Autoritative Daten zurück an den anfragenden Client senden.
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	if sender_id != 0:
+		sync_stats_data.rpc_id(sender_id, stat_points, stats.duplicate())
+
+
+## Server sendet die autoritativen Stat-Daten an einen Client.
+@rpc("any_peer", "call_local", "reliable")
+func sync_stats_data(points: int, new_stats: Dictionary) -> void:
+	stat_points = points
+	for key: String in new_stats:
+		if stats.has(key):
+			stats[key] = int(new_stats[key])
+	stats_changed.emit()
+	stats_initialized.emit()
 
 
 # ── Save / Load ───────────────────────────────────────────────────────────────

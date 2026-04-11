@@ -143,7 +143,11 @@ func _collect_save_data(player: Node) -> Dictionary:
 
 	var skills: Node = player.get_node_or_null("Skills")
 	if skills != null:
-		skills.last_position = player.position
+		# Solo/Host: Position direkt vom Node lesen (immer aktuell).
+		# Gäste: last_position wird via report_position RPC aktuell gehalten;
+		# player.position auf dem Server ist durch unreliable UDP nicht zuverlässig.
+		if not multiplayer.has_multiplayer_peer() or player.is_multiplayer_authority():
+			skills.last_position = player.position
 		data.merge(skills.get_save_data())
 
 	var inventory: Node = player.get_node_or_null("Inventory")
@@ -172,7 +176,7 @@ func _collect_save_data(player: Node) -> Dictionary:
 	return data
 
 
-## Sendet alle Daten (Skills + Inventar) nach der Spawn-Replikation an den Client.
+## Sendet alle Daten (Skills + Inventar + Stats) nach der Spawn-Replikation an den Client.
 func _sync_all_to_client(peer_id: int, player: Node) -> void:
 	if not is_instance_valid(player):
 		return
@@ -185,6 +189,10 @@ func _sync_all_to_client(peer_id: int, player: Node) -> void:
 	var inventory: Node = player.get_node_or_null("Inventory")
 	if inventory != null:
 		inventory.sync_inventory.rpc_id(peer_id, inventory.get_save_data())
+
+	var stats: Node = player.get_node_or_null("Stats")
+	if stats != null:
+		stats.sync_stats_data.rpc_id(peer_id, stats.stat_points, stats.stats.duplicate())
 
 
 func _ensure_safe_position(player: CharacterBody3D) -> void:

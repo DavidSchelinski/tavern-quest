@@ -123,6 +123,16 @@ func equip_skill(skill_id: String, hotbar_index: int) -> void:
 
 # ── Save / Load ───────────────────────────────────────────────────────────────
 
+## Gastspieler melden ihre aktuelle Position periodisch an den Server.
+## Stellt sicher dass last_position immer aktuell ist, unabhängig vom
+## unzuverlässigen MultiplayerSynchronizer.
+@rpc("any_peer", "call_remote", "reliable")
+func report_position(pos: Vector3) -> void:
+	if not multiplayer.is_server():
+		return
+	last_position = pos
+
+
 ## Gibt alle relevanten Daten für den SaveManager zurück.
 ## last_position muss vom GameManager vor diesem Aufruf gesetzt werden.
 func get_save_data() -> Dictionary:
