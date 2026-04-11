@@ -194,6 +194,13 @@ func _sync_all_to_client(peer_id: int, player: Node) -> void:
 	if stats != null:
 		stats.sync_stats_data.rpc_id(peer_id, stats.stat_points, stats.stats.duplicate())
 
+	# Position: der MultiplayerSynchronizer ist server-autoritär, aber der Server
+	# simuliert den Gastspieler nicht → player.position bleibt am Spawn-Punkt.
+	# Daher die gespeicherte Position explizit an den Client senden.
+	var skills_node: Node = player.get_node_or_null("Skills")
+	if skills_node != null:
+		player.rpc_id(peer_id, "sync_position", skills_node.get("last_position") as Vector3)
+
 	# Sync world state: remove items that were already picked up
 	var removed: Array = WorldState.removed_items.duplicate()
 	if not removed.is_empty():

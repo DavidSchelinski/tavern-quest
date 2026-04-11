@@ -122,6 +122,12 @@ func _setup_multiplayer() -> void:
 		camera.current = false
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func sync_position(pos: Vector3) -> void:
+	if _is_mine():
+		position = pos
+
+
 @rpc("any_peer", "call_local", "reliable")
 func _server_request_pickup(item_path: NodePath) -> void:
 	if not multiplayer.is_server():
