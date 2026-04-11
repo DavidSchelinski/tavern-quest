@@ -20,7 +20,9 @@ var _quest_entry_btns   : Array[Button] = []
 
 func setup(player: Node3D) -> void:
 	_player_ref = player
-	player.get_node("Quests").quests_changed.connect(_on_quests_changed)
+	var quests: Node = player.get_node("Quests")
+	if not quests.quests_changed.is_connected(_on_quests_changed):
+		quests.quests_changed.connect(_on_quests_changed)
 
 
 func refresh() -> void:

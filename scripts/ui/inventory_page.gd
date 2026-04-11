@@ -45,7 +45,9 @@ func setup(player: Node3D, held_icon: TextureRect, held_label: Label) -> void:
 	_player_ref = player
 	_held_icon = held_icon
 	_held_label = held_label
-	player.get_node("Inventory").slot_changed.connect(_on_slot_changed)
+	var inv: Node = player.get_node("Inventory")
+	if not inv.slot_changed.is_connected(_on_slot_changed):
+		inv.slot_changed.connect(_on_slot_changed)
 
 
 func refresh() -> void:

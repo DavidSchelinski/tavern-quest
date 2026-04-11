@@ -18,7 +18,9 @@ var _preview_mode : bool = false
 
 func setup(player: Node3D) -> void:
 	_player_ref = player
-	player.get_node("Stats").stats_changed.connect(_on_stats_changed)
+	var stats: Node = player.get_node("Stats")
+	if not stats.stats_changed.is_connected(_on_stats_changed):
+		stats.stats_changed.connect(_on_stats_changed)
 
 
 func refresh() -> void:

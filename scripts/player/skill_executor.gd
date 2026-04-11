@@ -83,7 +83,7 @@ func _spawn_skill_effect(skill_id: String, damage: float, level: int) -> void:
 
 	# Spawn position: in front of the player
 	var player_pos := _player.global_position
-	var forward := -_player.get_node("Pivot").global_transform.basis.z.normalized()
+	var forward: Vector3 = -_player.get_node("Pivot").global_transform.basis.z.normalized()
 	effect.global_position = player_pos + forward * 1.5 + Vector3(0, 1.0, 0)
 	effect.global_rotation.y = _player.get_node("Pivot").global_rotation.y
 

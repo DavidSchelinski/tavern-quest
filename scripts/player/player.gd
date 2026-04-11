@@ -80,6 +80,13 @@ var _stamina : float = 100.0
 var _hud     : CanvasLayer = null
 
 
+func _enter_tree() -> void:
+	# Set authority before children (synchronizers) enter the tree.
+	# The spawner assigns the node name = peer_id before add_child.
+	if multiplayer.has_multiplayer_peer() and name.is_valid_int():
+		set_multiplayer_authority(int(name))
+
+
 func _ready() -> void:
 	add_to_group("player")
 	health = $Stats.get_max_hp()
@@ -108,7 +115,6 @@ func _is_mine() -> bool:
 func _setup_multiplayer() -> void:
 	if not multiplayer.has_multiplayer_peer():
 		return
-	$ComponentSync.set_multiplayer_authority(1)
 	if _is_mine():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		camera.current = true
@@ -126,6 +132,10 @@ func _server_request_pickup(item_path: NodePath) -> void:
 	var leftover: int = $Inventory.add_item(item.item_data, 1)
 	if leftover == 0:
 		item.rpc("network_despawn")
+	# Sync inventory to the owning client (guest players only).
+	var owner_id: int = get_multiplayer_authority()
+	if owner_id != 1:
+		$Inventory.rpc_id(owner_id, "sync_inventory", $Inventory.get_save_data())
 
 
 # ── Options menu ──────────────────────────────────────────────────────────────

@@ -302,6 +302,12 @@ func _on_quit_to_menu() -> void:
 		SaveManager.save_world_state(WorldState.get_save_data())
 		print("OptionsMenu: Spielerdaten + Welt gespeichert für '%s'" % PlayerProfile.current_player_name)
 
+	# Gast: finale Position sofort an Server melden bevor die Verbindung getrennt wird.
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		var skills_node: Node = player.get_node_or_null("Skills") if is_instance_valid(player) else null
+		if skills_node != null:
+			skills_node.report_position.rpc_id(1, player.position)
+
 	NetworkManager.close()
 	quit_to_menu.emit()
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")

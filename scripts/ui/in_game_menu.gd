@@ -32,7 +32,8 @@ func open(player: Node3D) -> void:
 	var inv_page := _pages[0]
 	if inv_page.has_method("setup"):
 		inv_page.setup(player, _held_icon, _held_label)
-		inv_page.drop_to_world.connect(_do_drop_to_world)
+		if not inv_page.drop_to_world.is_connected(_do_drop_to_world):
+			inv_page.drop_to_world.connect(_do_drop_to_world)
 
 	var quest_page := _pages[1]
 	if quest_page.has_method("setup"):

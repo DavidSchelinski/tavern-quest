@@ -19,8 +19,10 @@ const PADDING  : float = 16.0
 
 func setup(player: Node3D) -> void:
 	_player_ref = player
-	AdventureGroupManager.groups_changed.connect(_on_groups_changed)
-	AdventureGroupManager.applications_changed.connect(_on_groups_changed)
+	if not AdventureGroupManager.groups_changed.is_connected(_on_groups_changed):
+		AdventureGroupManager.groups_changed.connect(_on_groups_changed)
+	if not AdventureGroupManager.applications_changed.is_connected(_on_groups_changed):
+		AdventureGroupManager.applications_changed.connect(_on_groups_changed)
 
 
 func refresh() -> void:

@@ -143,10 +143,10 @@ func _collect_save_data(player: Node) -> Dictionary:
 
 	var skills: Node = player.get_node_or_null("Skills")
 	if skills != null:
-		# Server speichert Position für ALLE Spieler (Host + Gäste).
-		# Der MultiplayerSynchronizer hält player.position auf dem Server aktuell.
-		# report_position dient als zusätzliches Backup.
-		if not multiplayer.has_multiplayer_peer() or multiplayer.is_server():
+		# Solo/Host: player.position ist korrekt (kein RPC-Tracking nötig).
+		# Gäste: skills.last_position wird via report_position RPC aktuell gehalten —
+		# player.position auf dem Server spiegelt NICHT die echte Gast-Position wider.
+		if not multiplayer.has_multiplayer_peer() or player.get_multiplayer_authority() == 1:
 			skills.last_position = player.position
 		data.merge(skills.get_save_data())
 
@@ -260,8 +260,8 @@ func _rpc_request_spawn(player_name: String, verification_code: String = "") -> 
 	_spawn_player(peer_id, player_name)
 
 
-func _on_player_spawned(node: Node) -> void:
-	node.set_multiplayer_authority(int(node.name))
+func _on_player_spawned(_node: Node) -> void:
+	pass  # Authority is set in player's _enter_tree() before synchronizers initialize
 
 
 # ── Disconnect / Reconnect ────────────────────────────────────────────────────
